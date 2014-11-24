@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ActiPebble</string>
+    <string name="hello_round">App is successfully installed</string>
+    <string name="hello_square">App is successfully installed</string>
+    <string name="title_activity_wear_training_activity">WearTrainingACtivity</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="prompt">Please walk unhindered until the watch vibrates.</string>
+</resources>
