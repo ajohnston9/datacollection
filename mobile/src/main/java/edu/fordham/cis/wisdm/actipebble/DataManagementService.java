@@ -8,11 +8,9 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Vibrator;
 import android.util.Log;
-
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.WearableListenerService;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,33 +18,82 @@ import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
-//import com.getpebble.android.kit.PebbleKit;
-//import com.getpebble.android.kit.util.PebbleDictionary;
-
-
 /**
  * Mananges the collection and saving of data from both the phone and smartwatch
  * @author <a href="mailto:ajohnston@fordham.edu">Andrew H. Johnston</a>
- * @version 1.0ALPHA
+ * @version 1.0STABLE
  */
 public class DataManagementService extends WearableListenerService implements SensorEventListener {
 
+    /**
+     * The debugging tag for the class
+     */
     private static final String TAG = "DataManagementService";
 
-    private String  name;
-    private char    activity;
+    /**
+     * The user's name
+     */
+    private String name;
 
-    private int    SAMPLE_RATE = 50000; //Sample at 20Hz (Once every 50,000 microseconds)
+    /**
+     * The label for the activity being performed
+     */
+    private char activity;
+
+    /**
+     * The sampling rate in microseconds to collect acceleration records at (this is 20Hz)
+     */
+    private int SAMPLE_RATE = 50000;
+
+    /**
+     * Flag that instructs the class whether to save new acceleration records
+     */
     private boolean shouldSample = true;
-    private SensorManager mSensorManager;
-    private Sensor        mAccelerometer;
 
+    /**
+     * Handles the instantiation of the accelerometer
+     */
+    private SensorManager mSensorManager;
+
+    /**
+     * Represents the physical acclerometer
+     */
+    private Sensor mAccelerometer;
+
+    /**
+     * The list of acceleration records from the watch
+     */
     private ArrayList<AccelerationRecord> mWatchAccelerationRecords;
+
+    /**
+     * The list of acceleration records from the phone
+     */
     private ArrayList<AccelerationRecord> mPhoneAccelerationRecords = new ArrayList<AccelerationRecord>();
 
+    /**
+     * The email used to send the data
+     */
+    private static final String emailSender = "wisdm.gaitlab@gmail.com";
+
+    /**
+     * The password for the sender's email
+     */
+    private static final String emailPassword = "WiSdM403!";
+
+    /**
+     * The email to send the data to
+     */
+    private static final String emailRecipient = "wisdm.gaitlab@gmail.com";
+
+    /**
+     * This is the equivalent of onCreate() but for Services. Allows for instantiating a service with arguments
+     * @param intent The intent that carries all arguments
+     * @param flags Any special flags for the class
+     * @param startId The ID of the service
+     * @return A code used by Android internals
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.wtf(TAG, "DataManagementService Started");
         name = intent.getStringExtra("NAME");
         activity = intent.getCharExtra("ACTIVITY", 'A');
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -74,14 +121,16 @@ public class DataManagementService extends WearableListenerService implements Se
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
                 ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
                 mWatchAccelerationRecords = (ArrayList<AccelerationRecord>) objectInputStream.readObject();
-                Log.wtf(TAG, "Records is of size: " + mWatchAccelerationRecords.size());
                 shouldSample = false;
-                writeToFile(mWatchAccelerationRecords, name +"_"+activity+"_watch.txt");
-                writeToFile(mPhoneAccelerationRecords, name +"_"+activity+"_phone.txt");
+
+                String filename = name + "_" + activity;
+
+                writeToFile(mWatchAccelerationRecords, filename+"_watch.txt");
+                writeToFile(mPhoneAccelerationRecords, filename+"_phone.txt");
                 new Thread(
-                        new SendData("wisdm.gaitlab@gmail.com", "WiSdM403!",
-                                name +"_"+activity+"_watch.txt",
-                                name +"_"+activity+"_phone.txt")).start();
+                        new SendData(emailSender, emailPassword,
+                                filename+"_watch.txt",
+                                filename+"_phone.txt")).start();
                 Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
                 vibrator.vibrate(500l); //Vibrate for half a second
             }
@@ -112,12 +161,22 @@ public class DataManagementService extends WearableListenerService implements Se
         //Not actually needed but must be overridden
     }
 
+    /**
+     * Takes the data files and sends them to the appropriate emails
+     */
     class SendData implements Runnable {
         private String user;
         private String pass;
         private File watch;
         private File phone;
 
+        /**
+         * Provides arguments so the thread can send email appropriately
+         * @param u The email of the sender
+         * @param p The password to the sender's email
+         * @param w The filename for the watch file
+         * @param f The filename for the phone file
+         */
         public SendData(String u, String p, String w, String f) {
             user = u;
             pass = p;
@@ -130,8 +189,7 @@ public class DataManagementService extends WearableListenerService implements Se
             GMailSender sender = new GMailSender(user, pass);
             try {
                 File[] attach = {watch, phone};
-                //TODO: "New Data" gets used everywhere
-                sender.sendMail("Data for " + name, "This is the data", "wisdm.gaitlab@gmail.com", "ahjohnston25@gmail.com", attach);
+                sender.sendMail("Data for " + name, "This is the data", user, emailRecipient, attach);
             } catch (Exception e) {
                 Log.wtf(TAG, e.getMessage());
             }

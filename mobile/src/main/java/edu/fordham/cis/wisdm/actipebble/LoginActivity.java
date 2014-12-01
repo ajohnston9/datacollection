@@ -15,14 +15,34 @@ import android.widget.Spinner;
 import java.util.Arrays;
 import java.util.HashMap;
 
-
+/**
+ * Allows users to set their name and choose an activity to collect data for
+ * @author Andrew H. Johnston <a href="mailto:ajohnston9@fordham.edu">ajohnston9@fordham.edu</a>
+ * @version 1.0STABLE
+ */
 public class LoginActivity extends Activity {
 
-    private EditText mName, mActivity;
-    private Button mLogin;
+    /**
+     * The field for setting a user's name
+     */
+    private EditText mName;
+
+    /**
+     * The button that takes a user to the training activity
+     */
+    private Button mStartTraining;
+
+    /**
+     * The spinner for choosing an activity
+     */
     private Spinner mSpinner;
 
+    /**
+     * The map that maps a character to its activity name
+     */
     private static HashMap<String,Character> spinnerEntries = new HashMap<String, Character>();
+
+    //I know this is ugly, but it has to go *somewhere*
     static {
         spinnerEntries.put("Standard- Walking", 'A');
         spinnerEntries.put("Standard- Jogging", 'B');
@@ -63,6 +83,7 @@ public class LoginActivity extends Activity {
 
         mSpinner = (Spinner) findViewById(R.id.spinner);
         final Object[] activities = spinnerEntries.keySet().toArray();
+        //sort() is called so the activities will be ordered by grouping (otherwise they'd be in a random order)
         Arrays.sort(activities);
         ArrayAdapter adapter =
                 new ArrayAdapter(this, android.R.layout.simple_spinner_item, activities);
@@ -80,12 +101,12 @@ public class LoginActivity extends Activity {
             }
         });
 
-        mLogin = (Button)findViewById(R.id.login);
+        mStartTraining = (Button)findViewById(R.id.login);
 
-        mLogin.setOnClickListener(new View.OnClickListener() {
+        mStartTraining.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String name   = mName.getText().toString().toLowerCase().replace(" ", "_");
+                String name = mName.getText().toString().toLowerCase().replace(" ", "_");
                 char activity = spinnerEntries.get(mSpinner.getSelectedItem());
                 Intent i = new Intent(getApplicationContext(), MainActivity.class);
                 i.putExtra("ACTIVITY", activity);

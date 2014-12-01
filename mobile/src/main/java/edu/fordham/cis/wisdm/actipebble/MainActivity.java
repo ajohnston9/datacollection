@@ -19,11 +19,12 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
-//import com.getpebble.android.kit.PebbleKit;
-//import com.getpebble.android.kit.PebbleKit.PebbleDataReceiver;
-//import com.getpebble.android.kit.util.PebbleDictionary;
 
-
+/**
+ * This activity is the one that displays the user's activity and allows them to begin the training
+ * @author Andrew H. Johnston <a href="mailto:ajohnston9@fordham.edu">ajohnston9@fordham.edu</a>
+ * @version 1.0STABLE
+ */
 public class MainActivity extends Activity {
 
     /**
@@ -41,25 +42,44 @@ public class MainActivity extends Activity {
      */
     private TextView mActivity, mUsername;
 
-
     /**
-     * Key for Pebble accelerometer values
+     * Flag to send to watch to trigger the start of training
      */
-    private static final int KEY_XYZ = 45;
-
-    private static final int NUM_SAMPLES = 25;
-    private static final int FREQUENCY = 50;
-    private static final int INCREMENT = 1000/FREQUENCY;
     private static final String START_TRAINING = "/start-training";
 
+    /**
+     * The label for the activity being done
+     */
     private char   label;
+
+    /**
+     * The user's name
+     */
     private String name;
+
+    /**
+     * The name of the activity to be collected
+     */
     private String actname;
 
+    /**
+     * Flag for determining if data collection is occuring
+     */
     private boolean isRunning = false;
+
+    /**
+     * Enables the activity to track the screen being locked and trigger appropriate events
+     */
     private ScreenLockReceiver mReceiver;
 
+    /**
+     * Enables communication between the watch and the phone
+     */
     private GoogleApiClient mGoogleApiClient;
+
+    /**
+     * Holds the data collection service (global so it can be stopped by the cancel button)
+     */
     private Intent service;
 
     @Override
@@ -156,11 +176,6 @@ public class MainActivity extends Activity {
         super.onPause();
     }
 
-//    @Override
-//    protected void onDestroy() {
-//        super.onPause();
-//    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -181,6 +196,10 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Sends the "start training" message to the wearable. Needs to be a separate thread
+     * because you can't call .await() from the UI thread
+     */
     class Worker implements Runnable {
 
         @Override

@@ -6,10 +6,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
-        * This class acts as a bin for acceleration records and allows for easy serialization of the data
-        * @author Andrew H. Johnston
-        * @verison 0.01ALPHA
-        */
+ * This class acts as a bin for acceleration records and allows for easy serialization of the data
+ * @author Andrew H. Johnston
+ * @version 1,0STABLE
+ */
 public class AccelerationRecord implements Serializable {
 
     /**
@@ -42,6 +42,10 @@ public class AccelerationRecord implements Serializable {
         timestamp = _time;
     }
 
+    /**
+     * Used for serialization of the class
+     * @param outputStream the output stream to write to
+     */
     private void writeObject(ObjectOutputStream outputStream) {
         try {
             outputStream.defaultWriteObject();
