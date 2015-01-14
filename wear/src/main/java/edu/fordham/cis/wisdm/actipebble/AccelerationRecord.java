@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @author Andrew H. Johnston
  * @version 1,0STABLE
  */
-public class AccelerationRecord implements Serializable {
+public class AccelerationRecord extends AbstractRecord implements Serializable {
 
     /**
      * The acceleration in the x-axis
