@@ -10,7 +10,7 @@ import java.io.Serializable;
  */
 public class GyroscopeRecord extends AbstractRecord implements Serializable {
 
-
+    static final long serialVersionUID = 2409678382753934076L;
 
     public GyroscopeRecord(float _x, float _y, float _z, long _time) {
         x = _x;

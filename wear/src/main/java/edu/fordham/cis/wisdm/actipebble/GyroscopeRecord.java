@@ -10,7 +10,7 @@ import java.io.Serializable;
  */
 public class GyroscopeRecord extends AbstractRecord implements Serializable {
 
-
+    static final long serialVersionUID = 2409678382753934076L;
 
     public GyroscopeRecord(float _x, float _y, float _z, long _time) {
         x = _x;
@@ -29,6 +29,11 @@ public class GyroscopeRecord extends AbstractRecord implements Serializable {
         } catch (Exception e) {
             Log.wtf("AccelerationRecord", e.getMessage());
         }
+    }
+
+    @Override
+    public String toString() {
+        return timestamp+","+x+","+y+","+z;
     }
 
 

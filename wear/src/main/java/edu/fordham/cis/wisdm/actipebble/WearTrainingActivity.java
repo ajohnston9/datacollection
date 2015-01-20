@@ -38,13 +38,13 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
     private GoogleApiClient googleApiClient;
 
     private ArrayList<AccelerationRecord> mAccelerationRecords = new ArrayList<AccelerationRecord>();
-    private ArrayList<GyroscopeRecord> mGyroscopeRecords = new ArrayList<>();
+    private ArrayList<GyroscopeRecord> mGyroscopeRecords = new ArrayList<GyroscopeRecord>();
 
     private AtomicBoolean shouldCollect = new AtomicBoolean(false);
 
     private static final String TAG = "WearTrainingActivity";
 
-    private int delay         = 1000 * 120; 
+    private int delay         = 1000 * 10; //Shifted from 120 for debugging
     private int maxNumRecords = (delay / 1000) * 20;
     private int recordCount   = 0;
     private static final int SAMPLE_RATE = 50000;
@@ -106,7 +106,8 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
     @Override
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, mAccelerometer, SAMPLE_RATE);
+        mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
     }
 
     @Override
@@ -121,7 +122,9 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                     mAccelerationRecords.add(new AccelerationRecord(x,y,z,timestamp));
                     break;
                 case Sensor.TYPE_GYROSCOPE:
-                    mGyroscopeRecords.add(new GyroscopeRecord(x,y,z,timestamp));
+                    GyroscopeRecord gyro = new GyroscopeRecord(x,y,z,timestamp);
+                    Log.wtf(TAG, "Record is: " + gyro.toString());
+                    mGyroscopeRecords.add(gyro);
             }
             recordCount++;
         }
@@ -163,8 +166,11 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                     request.setData(data);
                     PendingResult<DataApi.DataItemResult> pendingResult =
                             Wearable.DataApi.putDataItem(googleApiClient, request);
+                    //Do the same for wear
                     PutDataRequest request1 = PutDataRequest.create("/gdata");
                     request1.setData(gData);
+                    PendingResult<DataApi.DataItemResult> pendingResult1 =
+                            Wearable.DataApi.putDataItem(googleApiClient, request1);
 
                     //Vibrate and tell the user to check their phone
                     Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);

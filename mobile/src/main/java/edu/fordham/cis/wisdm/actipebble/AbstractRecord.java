@@ -10,6 +10,8 @@ public abstract class AbstractRecord {
     protected float y;
     protected float z;
 
+    private static final long serialVersionUID = 2345673456543874764L;
+
     public long getTimestamp() {
         return timestamp;
     }

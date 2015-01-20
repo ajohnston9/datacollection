@@ -156,9 +156,11 @@ public class DataManagementService extends WearableListenerService implements Se
                 if (o instanceof AccelerationRecord) {
                     mWatchAccelerationRecords = (ArrayList<AccelerationRecord>) arrayList;
                     hasWatchAccelData = true;
+                    Log.wtf(TAG, "Got accel");
                 } else if (o instanceof GyroscopeRecord) {
                     mWatchGyroRecords = (ArrayList<GyroscopeRecord>) arrayList;
                     hasWatchGyroData = true;
+                    Log.wtf(TAG, "Got gyro");
                 }
                 if (hasWatchGyroData && hasWatchAccelData) {
                     finalizeDataCollection();
