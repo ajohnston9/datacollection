@@ -162,11 +162,14 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                     }
                     byte[] data = baos.toByteArray();
                     byte[] gData = baosG.toByteArray();
+                    for (int i = 0; i < gData.length; ++i) {
+                        Log.wtf(TAG, gData[i]+"");
+                    }
                     PutDataRequest request = PutDataRequest.create("/data");
                     request.setData(data);
                     PendingResult<DataApi.DataItemResult> pendingResult =
                             Wearable.DataApi.putDataItem(googleApiClient, request);
-                    //Do the same for wear
+                    //Do the same for gyro
                     PutDataRequest request1 = PutDataRequest.create("/gdata");
                     request1.setData(gData);
                     PendingResult<DataApi.DataItemResult> pendingResult1 =
