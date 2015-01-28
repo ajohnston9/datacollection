@@ -35,7 +35,7 @@ public class MainActivity extends Activity {
     /**
      * Buttons to trigger events
      */
-    private Button mStartButton, mStopButton, mCancelButton;
+    private Button mStartButton, mStopButton;
 
     /**
      * Text views to display pebble accelerometer info
@@ -102,7 +102,6 @@ public class MainActivity extends Activity {
 
         mStartButton = (Button)findViewById(R.id.start_button);
         mStopButton = (Button)findViewById(R.id.stop_button);
-        mCancelButton = (Button)findViewById(R.id.cancel_button);
 
 
         mStartButton.setOnClickListener(new View.OnClickListener() {
@@ -116,21 +115,16 @@ public class MainActivity extends Activity {
         mStopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (isRunning) {
+                    unregisterReceiver(mReceiver);
                     isRunning = false;
-                    stopService(service);
+                    //Avoid some NullPointerExceptions
+                    if (service != null) {
+                        stopService(service);
+                    }
                     finish();
-                }
             }
         });
 
-        mCancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                stopService(service);
-                finish();
-            }
-        });
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
