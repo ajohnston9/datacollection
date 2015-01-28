@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * Holds an (x,y,z) tuple for a given time. Serializable for easy transmission from watch
  * to phone.
- * @author Andrew H. Johnston <a href="mailto:ajohnston9@fordham.edu">mailto:ajohnston9@fordham.edu</a>
+ * @author Andrew H. Johnston <a href="mailto:ajohnston9@fordham.edu">ajohnston9@fordham.edu</a>
  * @version 1.0STABLE
  */
 public class AccelerationRecord implements Serializable{
