@@ -8,7 +8,24 @@ import java.io.Serializable;
 /**
  * Created by andrew on 1/14/15.
  */
-public class GyroscopeRecord extends AbstractRecord implements Serializable {
+public class GyroscopeRecord implements Serializable {
+
+    /**
+     * @serial
+     */
+    protected long timestamp;
+    /**
+     * @serial
+     */
+    protected float x;
+    /**
+     * @serial
+     */
+    protected float y;
+    /**
+     * @serial
+     */
+    protected float z;
 
     static final long serialVersionUID = 2409678382753934076L;
 
@@ -29,6 +46,38 @@ public class GyroscopeRecord extends AbstractRecord implements Serializable {
         } catch (Exception e) {
             Log.wtf("AccelerationRecord", e.getMessage());
         }
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public void setX(float x) {
+        this.x = x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public void setY(float y) {
+        this.y = y;
+    }
+
+    public float getZ() {
+        return z;
+    }
+
+    public void setZ(float z) {
+        this.z = z;
     }
 
     @Override

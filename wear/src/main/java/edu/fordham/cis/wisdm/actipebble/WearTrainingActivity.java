@@ -25,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -141,7 +140,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
 
         @Override
         public void run() {
-            while (true) {
+            INFINITY: while (true) { //Labelled loop
                 if (recordCount > maxNumRecords) {
                     shouldCollect.set(false);
                     Log.wtf(TAG, "Ending stream");
@@ -159,31 +158,31 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                         oosG.writeObject(mGyroscopeRecords);
                         oosG.flush();
                         oosG.close();
+                        byte[] data = baos.toByteArray();
+                        byte[] gData = baosG.toByteArray();
+                        PutDataMapRequest dataMapRequest = PutDataMapRequest.create("/data");
+                        dataMapRequest.getDataMap().putByteArray("/accel", data);
+                        dataMapRequest.getDataMap().putByteArray("/gyro", gData);
+
+                        PutDataRequest request = dataMapRequest.asPutDataRequest();
+                        PendingResult<DataApi.DataItemResult> pendingResult =
+                                Wearable.DataApi.putDataItem(googleApiClient, request);
+
+                        //Vibrate and tell the user to check their phone
+                        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                        vibrator.vibrate(500L); //Vibrate for half a second
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mPrompt.setText("Please finish the training by opening your phone.");
+                                mProgress.setText("");
+                            }
+                        });
+                        break INFINITY; //Leave the thread
                     } catch (IOException e) {
                         Log.d(TAG, "Something fucky happened: " + e.getMessage());
                     }
-                    byte[] data = baos.toByteArray();
-                    byte[] gData = baosG.toByteArray();
-                    PutDataMapRequest dataMapRequest = PutDataMapRequest.create("/data");
-                    dataMapRequest.getDataMap().putByteArray("/accel", data);
-                    dataMapRequest.getDataMap().putByteArray("/gyro", gData);
-                    //This is to ensure android sees the data as changed"
-                    dataMapRequest.getDataMap().putLong("/time", (new Date()).getTime());
-                    PutDataRequest request = dataMapRequest.asPutDataRequest();
-                    PendingResult<DataApi.DataItemResult> pendingResult =
-                            Wearable.DataApi.putDataItem(googleApiClient, request);
 
-                    //Vibrate and tell the user to check their phone
-                    Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                    vibrator.vibrate(500L); //Vibrate for half a second
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mPrompt.setText("Please finish the training by opening your phone.");
-                            mProgress.setText("");
-                        }
-                    });
-                    break; //Leave the thread
                 }
             }
         }
