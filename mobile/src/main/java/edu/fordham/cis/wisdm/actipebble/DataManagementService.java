@@ -8,9 +8,13 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Vibrator;
 import android.util.Log;
+
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.WearableListenerService;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -143,28 +147,22 @@ public class DataManagementService extends WearableListenerService implements Se
 
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
-        //Once the watch starts sending data (regardless of type), its time to
-        //stop collecting
+        //Once the watch starts sending data its time to stop collecting
         shouldSample = false;
         try {
             for (DataEvent event: dataEvents) {
-                byte[] data = event.getDataItem().getData();
-                ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
-                ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-                ArrayList<?> arrayList = (ArrayList<?>) objectInputStream.readObject();
-                Object o = arrayList.get(0);
-                if (o instanceof AccelerationRecord) {
-                    mWatchAccelerationRecords = (ArrayList<AccelerationRecord>) arrayList;
-                    hasWatchAccelData = true;
-                    Log.wtf(TAG, "Got accel");
-                } else if (o instanceof GyroscopeRecord) {
-                    mWatchGyroRecords = (ArrayList<GyroscopeRecord>) arrayList;
-                    hasWatchGyroData = true;
-                    Log.wtf(TAG, "Got gyro");
-                }
-                if (hasWatchGyroData && hasWatchAccelData) {
-                    finalizeDataCollection();
-                }
+                DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
+                mWatchAccelerationRecords =   (ArrayList<AccelerationRecord>)
+                        (new ObjectInputStream(
+                                new ByteArrayInputStream(map.getByteArray("/accel"))
+                        )
+                    ).readObject();
+                mWatchGyroRecords =   (ArrayList<GyroscopeRecord>)
+                        (new ObjectInputStream(
+                                new ByteArrayInputStream(map.getByteArray("/gyro"))
+                        )
+                    ).readObject();
+                finalizeDataCollection();
             }
         } catch (Exception e) {
             Log.wtf(TAG, "Something happened: " +e.getClass().getName() + ": " +e.getMessage());

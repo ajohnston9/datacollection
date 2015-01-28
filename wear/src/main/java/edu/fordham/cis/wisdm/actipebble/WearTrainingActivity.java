@@ -17,6 +17,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 
@@ -24,6 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -162,18 +164,14 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                     }
                     byte[] data = baos.toByteArray();
                     byte[] gData = baosG.toByteArray();
-                    for (int i = 0; i < gData.length; ++i) {
-                        Log.wtf(TAG, gData[i]+"");
-                    }
-                    PutDataRequest request = PutDataRequest.create("/data");
-                    request.setData(data);
+                    PutDataMapRequest dataMapRequest = PutDataMapRequest.create("/data");
+                    dataMapRequest.getDataMap().putByteArray("/accel", data);
+                    dataMapRequest.getDataMap().putByteArray("/gyro", gData);
+                    //This is to ensure android sees the data as changed"
+                    dataMapRequest.getDataMap().putLong("/time", (new Date()).getTime());
+                    PutDataRequest request = dataMapRequest.asPutDataRequest();
                     PendingResult<DataApi.DataItemResult> pendingResult =
                             Wearable.DataApi.putDataItem(googleApiClient, request);
-                    //Do the same for gyro
-                    PutDataRequest request1 = PutDataRequest.create("/gdata");
-                    request1.setData(gData);
-                    PendingResult<DataApi.DataItemResult> pendingResult1 =
-                            Wearable.DataApi.putDataItem(googleApiClient, request1);
 
                     //Vibrate and tell the user to check their phone
                     Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
