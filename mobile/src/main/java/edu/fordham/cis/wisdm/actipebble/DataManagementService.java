@@ -123,7 +123,7 @@ public class DataManagementService extends WearableListenerService implements Se
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mSensorManager.registerListener(this, mAccelerometer, SAMPLE_RATE);
         mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
-        return START_STICKY; //Apparently this is what is typically returned
+        return START_NOT_STICKY; //Don't restart when app is shut down and reopened
     }
 
     @Override
