@@ -8,9 +8,13 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Vibrator;
 import android.util.Log;
+
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.WearableListenerService;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -59,17 +63,35 @@ public class DataManagementService extends WearableListenerService implements Se
      * Represents the physical acclerometer
      */
     private Sensor mAccelerometer;
-
+    /**
+     * Represents the gyroscope
+     */
+    private Sensor mGyroscope;
     /**
      * The list of acceleration records from the watch
      */
     private ArrayList<AccelerationRecord> mWatchAccelerationRecords;
+    /**
+     * The list of gyroscopic records from the watch
+     */
+    private ArrayList<GyroscopeRecord> mWatchGyroRecords;
 
     /**
      * The list of acceleration records from the phone
      */
-    private ArrayList<AccelerationRecord> mPhoneAccelerationRecords = new ArrayList<AccelerationRecord>();
-
+    private ArrayList<AccelerationRecord> mPhoneAccelerationRecords = new ArrayList<>();
+    /**
+     * The list of gyroscopic records from the phone
+     */
+    private ArrayList<GyroscopeRecord> mPhoneGyroRecords = new ArrayList<>();
+    /**
+     *
+     */
+    private boolean hasWatchAccelData = false;
+    /**
+     *
+     */
+    private boolean hasWatchGyroData = false;
     /**
      * The email used to send the data
      */
@@ -98,8 +120,10 @@ public class DataManagementService extends WearableListenerService implements Se
         activity = intent.getCharExtra("ACTIVITY", 'A');
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         mSensorManager.registerListener(this, mAccelerometer, SAMPLE_RATE);
-        return START_STICKY; //Apparently this is what is typically returned
+        mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
+        return START_NOT_STICKY; //Don't restart when app is shut down and reopened
     }
 
     @Override
@@ -109,34 +133,60 @@ public class DataManagementService extends WearableListenerService implements Se
             float x = event.values[0];
             float y = event.values[1];
             float z = event.values[2];
-            mPhoneAccelerationRecords.add(new AccelerationRecord(x,y,z,time));
+            switch(event.sensor.getType()) {
+                case Sensor.TYPE_ACCELEROMETER:
+                    mPhoneAccelerationRecords.add(new AccelerationRecord(x,y,z,time));
+                    break;
+                case Sensor.TYPE_GYROSCOPE:
+                    mPhoneGyroRecords.add(new GyroscopeRecord(x,y,z,time));
+            }
+
+
         }
     }
 
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
+        //Once the watch starts sending data its time to stop collecting
+        shouldSample = false;
         try {
             for (DataEvent event: dataEvents) {
-                byte[] data = event.getDataItem().getData();
-                ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
-                ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-                mWatchAccelerationRecords = (ArrayList<AccelerationRecord>) objectInputStream.readObject();
-                shouldSample = false;
-
-                String filename = name + "_" + activity;
-
-                writeToFile(mWatchAccelerationRecords, filename+"_watch.txt");
-                writeToFile(mPhoneAccelerationRecords, filename+"_phone.txt");
-                new Thread(
-                        new SendData(emailSender, emailPassword,
-                                filename+"_watch.txt",
-                                filename+"_phone.txt")).start();
-                Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                vibrator.vibrate(500l); //Vibrate for half a second
+                DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
+                mWatchAccelerationRecords =   (ArrayList<AccelerationRecord>)
+                        (new ObjectInputStream(
+                                new ByteArrayInputStream(map.getByteArray("/accel"))
+                        )
+                    ).readObject();
+                mWatchGyroRecords =   (ArrayList<GyroscopeRecord>)
+                        (new ObjectInputStream(
+                                new ByteArrayInputStream(map.getByteArray("/gyro"))
+                        )
+                    ).readObject();
+                finalizeDataCollection();
             }
         } catch (Exception e) {
             Log.wtf(TAG, "Something happened: " +e.getClass().getName() + ": " +e.getMessage());
         }
+    }
+
+    private void finalizeDataCollection() {
+
+        String filename = name + "_accel_" + activity;
+        String gyFilename = name + "_gyro_" + activity;
+        final String watchFile = "_watch.txt";
+        final String phoneFile = "_phone.txt";
+        writeToFile(mWatchAccelerationRecords, filename+watchFile);
+        writeToFile(mPhoneAccelerationRecords, filename+phoneFile);
+        writeToFileGyro(mWatchGyroRecords, gyFilename + watchFile);
+        writeToFileGyro(mPhoneGyroRecords, gyFilename+phoneFile);
+        new Thread(
+                new SendData(emailSender, emailPassword,
+                        filename+watchFile,
+                        filename+phoneFile,
+                        gyFilename + watchFile,
+                        gyFilename+phoneFile)).start();
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        vibrator.vibrate(500l); //Vibrate for half a second
     }
 
 
@@ -146,6 +196,22 @@ public class DataManagementService extends WearableListenerService implements Se
         try {
             writer = new PrintWriter(file);
             for (AccelerationRecord record : accelerationRecords) {
+                writer.println(record.toString());
+            }
+            writer.flush();
+            writer.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        Log.wtf(TAG, "File location is: " + file.getAbsolutePath());
+    }
+
+    private void writeToFileGyro(ArrayList<GyroscopeRecord> gyroscopeRecords, String filename) {
+        File file = new File(getFilesDir(), filename);
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter(file);
+            for (GyroscopeRecord record : gyroscopeRecords) {
                 writer.println(record.toString());
             }
             writer.flush();
@@ -167,28 +233,35 @@ public class DataManagementService extends WearableListenerService implements Se
     class SendData implements Runnable {
         private String user;
         private String pass;
-        private File watch;
-        private File phone;
+        private File watchAccel;
+        private File phoneAccel;
+        private File watchGyro;
+        private File phoneGyro;
 
         /**
          * Provides arguments so the thread can send email appropriately
          * @param u The email of the sender
          * @param p The password to the sender's email
-         * @param w The filename for the watch file
-         * @param f The filename for the phone file
+         * @param wA The filename for the watch accel file
+         * @param fA The filename for the phone accel file
+         * @param wG The filename for the watch gyro file
+         * @param pG The filename for the phone accel file
          */
-        public SendData(String u, String p, String w, String f) {
+        public SendData(String u, String p, String wA, String fA, String wG, String pG) {
             user = u;
             pass = p;
-            watch = new File(getFilesDir(), w);
-            phone = new File(getFilesDir(), f);
+            watchAccel = new File(getFilesDir(), wA);
+            phoneAccel = new File(getFilesDir(), fA);
+            watchGyro = new File(getFilesDir(), wG);
+            phoneGyro = new File(getFilesDir(), pG);
+
         }
 
         @Override
         public void run() {
             GMailSender sender = new GMailSender(user, pass);
             try {
-                File[] attach = {watch, phone};
+                File[] attach = {watchAccel, phoneAccel, watchGyro,phoneGyro};
                 sender.sendMail("Data for " + name, "This is the data", user, emailRecipient, attach);
             } catch (Exception e) {
                 Log.wtf(TAG, e.getMessage());
