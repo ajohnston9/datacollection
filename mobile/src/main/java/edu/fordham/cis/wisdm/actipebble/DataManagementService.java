@@ -85,14 +85,6 @@ public class DataManagementService extends WearableListenerService implements Se
      */
     private ArrayList<GyroscopeRecord> mPhoneGyroRecords = new ArrayList<GyroscopeRecord>();
     /**
-     *
-     */
-    private boolean hasWatchAccelData = false;
-    /**
-     *
-     */
-    private boolean hasWatchGyroData = false;
-    /**
      * The email used to send the data
      */
     private static final String emailSender = "wisdm.gaitlab@gmail.com";

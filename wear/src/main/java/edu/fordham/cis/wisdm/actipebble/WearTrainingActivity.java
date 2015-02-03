@@ -46,7 +46,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
     private static final String TAG = "WearTrainingActivity";
 
 
-    private int delay         = 1000 * 10; //Shifted from 120 for debugging
+    private int delay         = 1000 * 120; //Shifted from 120 for debugging
     private int maxNumRecords = (delay / 1000) * 20;
     private int recordCount   = 0;
     private static final int SAMPLE_RATE = 50000;
