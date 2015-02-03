@@ -73,6 +73,11 @@ public class MainActivity extends Activity {
     private ScreenLockReceiver mReceiver;
 
     /**
+     * Flag to tell if Receiver is registered
+     */
+    private boolean isReceiverRegistered = false;
+
+    /**
      * Enables communication between the watch and the phone
      */
     private GoogleApiClient mGoogleApiClient;
@@ -115,7 +120,11 @@ public class MainActivity extends Activity {
         mStopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                    unregisterReceiver(mReceiver);
+                    try {
+                        unregisterReceiver(mReceiver);
+                    } catch (IllegalArgumentException e) {
+                        Log.i(TAG, "Unregistered receiver was asked to unregister. Ignoring.");
+                    }
                     isRunning = false;
                     //Avoid some NullPointerExceptions
                     if (service != null) {
@@ -152,6 +161,7 @@ public class MainActivity extends Activity {
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
         mReceiver = new ScreenLockReceiver();
         registerReceiver(mReceiver, intentFilter);
+        isReceiverRegistered = true;
     }
 
 
@@ -164,7 +174,11 @@ public class MainActivity extends Activity {
             service.putExtra("ACTIVITY", label);
             startService(service);
             new Thread(new Worker()).start();
-            unregisterReceiver(mReceiver);
+            try {
+                unregisterReceiver(mReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.i(TAG, "Unregistered receiver was asked to unregister. Ignoring.");
+            }
             isRunning = false;
         }
         super.onPause();

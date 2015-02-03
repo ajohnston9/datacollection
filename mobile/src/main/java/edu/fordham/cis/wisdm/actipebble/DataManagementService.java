@@ -79,11 +79,11 @@ public class DataManagementService extends WearableListenerService implements Se
     /**
      * The list of acceleration records from the phone
      */
-    private ArrayList<AccelerationRecord> mPhoneAccelerationRecords = new ArrayList<>();
+    private ArrayList<AccelerationRecord> mPhoneAccelerationRecords = new ArrayList<AccelerationRecord>();
     /**
      * The list of gyroscopic records from the phone
      */
-    private ArrayList<GyroscopeRecord> mPhoneGyroRecords = new ArrayList<>();
+    private ArrayList<GyroscopeRecord> mPhoneGyroRecords = new ArrayList<GyroscopeRecord>();
     /**
      *
      */
