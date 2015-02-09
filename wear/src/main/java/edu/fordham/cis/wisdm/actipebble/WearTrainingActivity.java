@@ -48,7 +48,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
 
     private PowerManager.WakeLock wakeLock;
 
-    private int delay         = 1000 * 120;
+    private int delay         = 2000 * 120;
     private int maxNumRecords = (delay / 1000) * 20;
     private int recordCount   = 0;
     private static final int SAMPLE_RATE = 50000;
@@ -100,7 +100,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
         shouldCollect.set(true);
         Log.wtf(TAG, "Started collecting");
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+        wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK,
                 "MyWakelockTag");
         wakeLock.acquire();
     }
