@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.os.Vibrator;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
@@ -45,8 +46,9 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
 
     private static final String TAG = "WearTrainingActivity";
 
+    private PowerManager.WakeLock wakeLock;
 
-    private int delay         = 1000 * 120; //Shifted from 120 for debugging
+    private int delay         = 1000 * 120;
     private int maxNumRecords = (delay / 1000) * 20;
     private int recordCount   = 0;
     private static final int SAMPLE_RATE = 50000;
@@ -97,13 +99,18 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
         new Thread(new CollectTask()).start();
         shouldCollect.set(true);
         Log.wtf(TAG, "Started collecting");
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                "MyWakelockTag");
+        wakeLock.acquire();
     }
 
     @Override
     protected void onPause() {
-        super.onPause();
-        mSensorManager.unregisterListener(this);
+            super.onPause();
+            mSensorManager.unregisterListener(this);
     }
+
 
     @Override
     protected void onResume() {
@@ -144,6 +151,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
             INFINITY: while (true) { //Labelled loop
                 if (recordCount > maxNumRecords) {
                     shouldCollect.set(false);
+                    wakeLock.release();
                     Log.wtf(TAG, "Ending stream");
                     ByteArrayOutputStream baos = null;
                     ByteArrayOutputStream baosG = null;

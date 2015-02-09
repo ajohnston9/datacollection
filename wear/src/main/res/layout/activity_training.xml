@@ -9,5 +9,6 @@
     app:rectLayout="@layout/rect_activity_train"
     app:roundLayout="@layout/round_activity_train"
     tools:context=".WearTrainingActivity"
+    android:keepScreenOn="true"
     tools:deviceIds="wear">
 </android.support.wearable.view.WatchViewStub>
