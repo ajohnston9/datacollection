@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author Andrew H. Johnston <a href="mailto:ajohnston9@fordham.edu">ajohnston9@fordham.edu</a>
  * @version 1.0STABLE
  */
-public class AccelerationRecord implements Serializable{
+public class AccelerationRecord implements Serializable, Comparable<AccelerationRecord> {
 
     /**
      * The debugging tag for the class
@@ -108,5 +108,19 @@ public class AccelerationRecord implements Serializable{
     @Override
     public String toString() {
         return timestamp + "," +x+","+y+","+z;
+    }
+
+    @Override
+    public int compareTo(AccelerationRecord that) {
+        if (that == null) {
+            throw new NullPointerException();
+        }
+        long tstmp = that.getTimestamp();
+        if (that == this || tstmp == timestamp) {
+            return 0;
+        } else if (tstmp > timestamp) {
+            return 1;
+        }
+        return -1;
     }
 }

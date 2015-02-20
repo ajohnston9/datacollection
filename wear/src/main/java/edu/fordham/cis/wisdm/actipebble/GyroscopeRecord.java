@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * Created by andrew on 1/14/15.
  */
-public class GyroscopeRecord implements Serializable {
+public class GyroscopeRecord implements Serializable, Comparable<GyroscopeRecord> {
 
     /**
      * @serial
@@ -84,6 +84,18 @@ public class GyroscopeRecord implements Serializable {
     public String toString() {
         return timestamp+","+x+","+y+","+z;
     }
-
+    @Override
+    public int compareTo(GyroscopeRecord that) {
+        if (that == null) {
+            throw new NullPointerException();
+        }
+        long tstmp = that.getTimestamp();
+        if (that == this || tstmp == timestamp) {
+            return 0;
+        } else if (tstmp > timestamp) {
+            return 1;
+        }
+        return -1;
+    }
 
 }

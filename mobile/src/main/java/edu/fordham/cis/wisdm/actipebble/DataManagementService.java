@@ -13,6 +13,7 @@ import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 
 import java.io.ByteArrayInputStream;
@@ -21,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Mananges the collection and saving of data from both the phone and smartwatch
@@ -100,6 +102,11 @@ public class DataManagementService extends WearableListenerService implements Se
     private static final String emailRecipient = "wisdm.gaitlab@gmail.com";
 
     /**
+     * Flag that signals the end of data transmission from the watch
+     */
+    private static final String DATA_COLLECTION_DONE = "/thats-all-folks";
+
+    /**
      * This is the equivalent of onCreate() but for Services. Allows for instantiating a service with arguments
      * @param intent The intent that carries all arguments
      * @param flags Any special flags for the class
@@ -143,26 +150,42 @@ public class DataManagementService extends WearableListenerService implements Se
         shouldSample = false;
         try {
             for (DataEvent event: dataEvents) {
-                DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
-                mWatchAccelerationRecords =   (ArrayList<AccelerationRecord>)
-                        (new ObjectInputStream(
-                                new ByteArrayInputStream(map.getByteArray("/accel"))
-                        )
-                    ).readObject();
-                mWatchGyroRecords =   (ArrayList<GyroscopeRecord>)
-                        (new ObjectInputStream(
-                                new ByteArrayInputStream(map.getByteArray("/gyro"))
-                        )
-                    ).readObject();
-                finalizeDataCollection();
+                String path = event.getDataItem().getUri().getPath();
+                if (path.matches("/accel-data")) {
+                    DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
+                    ArrayList<AccelerationRecord> accelTmp = (ArrayList<AccelerationRecord>)
+                            (new ObjectInputStream(
+                                    new ByteArrayInputStream(map.getByteArray("/accel"))
+                            )
+                            ).readObject();
+                    mWatchAccelerationRecords.addAll(accelTmp);
+                } else if (path.matches("/gyro-data")) {
+                    DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
+                    ArrayList<GyroscopeRecord> gyroTmp = (ArrayList<GyroscopeRecord>)
+                            (new ObjectInputStream(
+                                    new ByteArrayInputStream(map.getByteArray("/gyro"))
+                            )
+                            ).readObject();
+                    mWatchGyroRecords.addAll(gyroTmp);
+                } else {
+                    Log.wtf(TAG, "Received unexpected data with path " + path);
+                }
             }
         } catch (Exception e) {
             Log.wtf(TAG, "Something happened: " +e.getClass().getName() + ": " +e.getMessage());
         }
     }
 
-    private void finalizeDataCollection() {
+    @Override
+    public void onMessageReceived(MessageEvent messageEvent) {
+        if (messageEvent.getPath().matches(DATA_COLLECTION_DONE)) {
+            finalizeDataCollection();
+        }
+    }
 
+    private void finalizeDataCollection() {
+		Collections.sort(mWatchAccelerationRecords);
+		Collections.sort(mWatchGyroRecords);
         String filename = name + "_accel_" + activity;
         String gyFilename = name + "_gyro_" + activity;
         final String watchFile = "_watch.txt";

@@ -18,14 +18,19 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
+import com.google.common.collect.Lists;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -48,10 +53,19 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
 
     private PowerManager.WakeLock wakeLock;
 
-    private int delay         = 2000 * 120;
-    private int maxNumRecords = (delay / 1000) * 20;
+    //Constant used to add clarity to formulae below
+    private static final short MILLIS_IN_A_SECOND = 1000;
+    //Change the second multiplicand to change the number of seconds of data collected
+    private int delay         = MILLIS_IN_A_SECOND * 120;
+    //Expressed in a formula so that value makes more sense
+    private int maxNumRecords = (delay / MILLIS_IN_A_SECOND) * 20;
     private int recordCount   = 0;
     private static final int SAMPLE_RATE = 50000;
+    private static final int MAX_RECORDS_SENT_AT_ONCE = 3500;
+    /**
+     * Flag that signals the end of data transmission to the phone
+     */
+    private static final String DATA_COLLECTION_DONE = "/thats-all-folks";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,12 +110,11 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                 .addApi(Wearable.API)
                 .build();
         googleApiClient.connect();
-        new Thread(new CollectTask()).start();
         shouldCollect.set(true);
-        Log.wtf(TAG, "Started collecting");
+        Log.d(TAG, "Started collecting");
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK,
-                "MyWakelockTag");
+                "WearTrainingWakelock");
         wakeLock.acquire();
     }
 
@@ -129,13 +142,19 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
             switch(event.sensor.getType()) {
                 case Sensor.TYPE_ACCELEROMETER:
                     mAccelerationRecords.add(new AccelerationRecord(x,y,z,timestamp));
+                    recordCount++;
                     break;
                 case Sensor.TYPE_GYROSCOPE:
                     GyroscopeRecord gyro = new GyroscopeRecord(x,y,z,timestamp);
-                    Log.wtf(TAG, "Record is: " + gyro.toString());
+                    //Clean up debugging output a little
+                    if (recordCount % 10 == 0) {
+                        Log.d(TAG, "Record is: " + gyro.toString());
+                    }
                     mGyroscopeRecords.add(gyro);
             }
-            recordCount++;
+            if (recordCount > maxNumRecords) {
+                new Thread(new SendDataToPhoneTask()).start();
+            }
         }
     }
 
@@ -144,56 +163,81 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
         //Not used but must be overridden
     }
 
-    class CollectTask implements Runnable {
+
+
+    class SendDataToPhoneTask implements Runnable {
 
         @Override
         public void run() {
-            INFINITY: while (true) { //Labelled loop
-                if (recordCount > maxNumRecords) {
-                    shouldCollect.set(false);
-                    wakeLock.release();
-                    Log.wtf(TAG, "Ending stream");
-                    ByteArrayOutputStream baos = null;
-                    ByteArrayOutputStream baosG = null;
-                    try {
-                        baos = new ByteArrayOutputStream();
-                        ObjectOutputStream oos = new ObjectOutputStream(baos);
-                        oos.writeObject(mAccelerationRecords);
-                        oos.flush();
-                        oos.close();
-                        //Handle Gyro
-                        baosG = new ByteArrayOutputStream();
-                        ObjectOutputStream oosG = new ObjectOutputStream(baosG);
-                        oosG.writeObject(mGyroscopeRecords);
-                        oosG.flush();
-                        oosG.close();
-                        byte[] data = baos.toByteArray();
-                        byte[] gData = baosG.toByteArray();
-                        PutDataMapRequest dataMapRequest = PutDataMapRequest.create("/data");
-                        dataMapRequest.getDataMap().putByteArray("/accel", data);
-                        dataMapRequest.getDataMap().putByteArray("/gyro", gData);
+            shouldCollect.set(false);
+            wakeLock.release();
+            Log.wtf(TAG, "Ending stream");
 
-                        PutDataRequest request = dataMapRequest.asPutDataRequest();
-                        PendingResult<DataApi.DataItemResult> pendingResult =
-                                Wearable.DataApi.putDataItem(googleApiClient, request);
-
-                        //Vibrate and tell the user to check their phone
-                        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                        vibrator.vibrate(500L); //Vibrate for half a second
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mPrompt.setText("Please finish the training by opening your phone.");
-                                mProgress.setText("");
-                            }
-                        });
-                        break INFINITY; //Leave the thread
-                    } catch (IOException e) {
-                        Log.d(TAG, "Something fucky happened: " + e.getMessage());
-                    }
-
+            try {
+                List<List<AccelerationRecord>> accelLists =
+                        Lists.partition(mAccelerationRecords, MAX_RECORDS_SENT_AT_ONCE);
+                List<List<GyroscopeRecord>> gyroLists =
+                        Lists.partition(mGyroscopeRecords, MAX_RECORDS_SENT_AT_ONCE);
+                 /* I know the following two for loops look like they could be
+                  * abstracted into a single generic method, but due to type erasure
+                  * of generics I can't do this with a single polymoprhic method.
+                  */
+                for (List<AccelerationRecord> list : accelLists) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    ObjectOutputStream oos = new ObjectOutputStream(baos);
+                    oos.writeObject(list);
+                    oos.flush();
+                    oos.close();
+                    byte[] data = baos.toByteArray();
+                    PutDataMapRequest dataMapRequest = PutDataMapRequest.create("/accel-data");
+                    dataMapRequest.getDataMap().putByteArray("/accel", data);
+                    PutDataRequest request = dataMapRequest.asPutDataRequest();
+                    PendingResult<DataApi.DataItemResult> pendingResult =
+                            Wearable.DataApi.putDataItem(googleApiClient, request);
                 }
+                for (List<GyroscopeRecord> list : gyroLists) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    ObjectOutputStream oosG = new ObjectOutputStream(baos);
+                    oosG.writeObject(list);
+                    oosG.flush();
+                    oosG.close();
+                    byte[] data = baos.toByteArray();
+                    PutDataMapRequest dataMapRequest = PutDataMapRequest.create("/gyro-data");
+                    dataMapRequest.getDataMap().putByteArray("/gyro", data);
+                    PutDataRequest request = dataMapRequest.asPutDataRequest();
+                    PendingResult<DataApi.DataItemResult> pendingResult =
+                            Wearable.DataApi.putDataItem(googleApiClient, request);
+                }
+                //Signal end of data collection
+                NodeApi.GetConnectedNodesResult nodes =
+                        Wearable.NodeApi.getConnectedNodes(googleApiClient).await();
+                for (Node node : nodes.getNodes()) {
+                    MessageApi.SendMessageResult result;
+                    Log.d(TAG, "Started message sending process.");
+                    result= Wearable.MessageApi.sendMessage(
+                            googleApiClient, node.getId(), DATA_COLLECTION_DONE, null).await();
+                    Log.d(TAG, "Sent to node: " + node.getId() + " with display name: " + node.getDisplayName());
+                    if (!result.getStatus().isSuccess()) {
+                        Log.e(TAG, "ERROR: failed to send Message: " + result.getStatus());
+                    } else {
+                        Log.d(TAG, "Message Successfully sent.");
+                    }
+                }
+                //Vibrate and tell the user to check their phone
+                Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                vibrator.vibrate(500L); //Vibrate for half a second
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPrompt.setText("Please finish the training by opening your phone.");
+                        mProgress.setText("");
+                    }
+                });
+            } catch (IOException e) {
+                Log.d(TAG, "Something fucky happened: " + e.getMessage());
             }
+
+
         }
     }
 }

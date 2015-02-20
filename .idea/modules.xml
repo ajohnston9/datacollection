@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ActiPebble.iml" filepath="$PROJECT_DIR$/ActiPebble.iml" />
       <module fileurl="file://$PROJECT_DIR$/actiwatch.iml" filepath="$PROJECT_DIR$/actiwatch.iml" />
       <module fileurl="file://$PROJECT_DIR$/mobile/mobile.iml" filepath="$PROJECT_DIR$/mobile/mobile.iml" />
       <module fileurl="file://$PROJECT_DIR$/wear/wear.iml" filepath="$PROJECT_DIR$/wear/wear.iml" />

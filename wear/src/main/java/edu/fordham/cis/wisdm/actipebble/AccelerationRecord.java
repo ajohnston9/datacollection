@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @author Andrew H. Johnston
  * @version 1,0STABLE
  */
-public class AccelerationRecord implements Serializable {
+public class AccelerationRecord implements Serializable, Comparable<AccelerationRecord> {
 
     /**
      * The acceleration in the x-axis
@@ -84,5 +84,19 @@ public class AccelerationRecord implements Serializable {
 
     public void setZ(float z) {
         this.z = z;
+    }
+    
+@Override
+    public int compareTo(AccelerationRecord that) {
+        if (that == null) {
+            throw new NullPointerException();
+        }
+        long tstmp = that.getTimestamp();
+        if (that == this || tstmp == timestamp) {
+            return 0;
+        } else if (tstmp > timestamp) {
+            return 1;
+        }
+        return -1;
     }
 }
