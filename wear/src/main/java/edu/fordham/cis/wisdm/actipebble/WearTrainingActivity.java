@@ -18,9 +18,6 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.wearable.DataApi;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
@@ -70,7 +67,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
      */
     private static final short MILLIS_IN_A_SECOND = 1000;
     /**
-     * Change the second multiplicand to change the number of seconds of data collected
+     * Change the second (i.e. 2nd) multiplicand to change the number of seconds of data collected
      */
     private int delay  = MILLIS_IN_A_SECOND * 120;
     /**
@@ -212,7 +209,9 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                     Log.d(TAG, "Sending list of acceleration records...");
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     ObjectOutputStream oos = new ObjectOutputStream(baos);
-                    oos.writeObject(list);
+                    ArrayList<AccelerationRecord> tmp = new ArrayList<AccelerationRecord>(list);
+                    Log.d(TAG, "List is of size: " + tmp.size());
+                    oos.writeObject(tmp);
                     oos.flush();
                     oos.close();
                     byte[] data = baos.toByteArray();
@@ -222,35 +221,46 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                     PendingResult<DataApi.DataItemResult> pendingResult =
                             Wearable.DataApi.putDataItem(googleApiClient, request);
                 }
-                for (List<GyroscopeRecord> list : gyroLists) {
+                //Having a bug where a "that's all" message actually beats the
+                //data to the phone, so we'll just attach the message to the last
+                //list of data going out
+                for (int i = 0; i < gyroLists.size(); ++i) {
+                    List<GyroscopeRecord> list = gyroLists.get(i);
                     Log.d(TAG, "Sending list of gyroscope records...");
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     ObjectOutputStream oosG = new ObjectOutputStream(baos);
-                    oosG.writeObject(list);
+                    ArrayList<GyroscopeRecord> tmp = new ArrayList<GyroscopeRecord>(list);
+                    Log.d(TAG, "List is of size: " + tmp.size());
+                    oosG.writeObject(tmp);
                     oosG.flush();
                     oosG.close();
                     byte[] data = baos.toByteArray();
                     PutDataMapRequest dataMapRequest = PutDataMapRequest.create("/gyro-data");
                     dataMapRequest.getDataMap().putByteArray("/gyro", data);
+                    if ((i+1) == gyroLists.size()) {
+                        dataMapRequest.getDataMap().putString("/done", DATA_COLLECTION_DONE);
+                    } else {
+                        dataMapRequest.getDataMap().putString("/done", "/not-done");
+                    }
                     PutDataRequest request = dataMapRequest.asPutDataRequest();
                     PendingResult<DataApi.DataItemResult> pendingResult =
                             Wearable.DataApi.putDataItem(googleApiClient, request);
                 }
-                //Signal end of data collection
-                NodeApi.GetConnectedNodesResult nodes =
-                        Wearable.NodeApi.getConnectedNodes(googleApiClient).await();
-                for (Node node : nodes.getNodes()) {
-                    MessageApi.SendMessageResult result;
-                    Log.d(TAG, "Started message sending process.");
-                    result= Wearable.MessageApi.sendMessage(
-                            googleApiClient, node.getId(), DATA_COLLECTION_DONE, null).await();
-                    Log.d(TAG, "Sent to node: " + node.getId() + " with display name: " + node.getDisplayName());
-                    if (!result.getStatus().isSuccess()) {
-                        Log.e(TAG, "ERROR: failed to send Message: " + result.getStatus());
-                    } else {
-                        Log.d(TAG, "Message Successfully sent.");
-                    }
-                }
+//                //Signal end of data collection
+//                NodeApi.GetConnectedNodesResult nodes =
+//                        Wearable.NodeApi.getConnectedNodes(googleApiClient).await();
+//                for (Node node : nodes.getNodes()) {
+//                    MessageApi.SendMessageResult result;
+//                    Log.d(TAG, "Started message sending process.");
+//                    result= Wearable.MessageApi.sendMessage(
+//                            googleApiClient, node.getId(), DATA_COLLECTION_DONE, null).await();
+//                    Log.d(TAG, "Sent to node: " + node.getId() + " with display name: " + node.getDisplayName());
+//                    if (!result.getStatus().isSuccess()) {
+//                        Log.e(TAG, "ERROR: failed to send Message: " + result.getStatus());
+//                    } else {
+//                        Log.d(TAG, "Message Successfully sent.");
+//                    }
+//                }
                 //Vibrate and tell the user to check their phone
                 Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
                 vibrator.vibrate(500L); //Vibrate for half a second

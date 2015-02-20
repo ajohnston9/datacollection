@@ -106,7 +106,7 @@ public class LoginActivity extends Activity {
         mStartTraining.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String name = mName.getText().toString().toLowerCase().replace(" ", "_");
+                String name = mName.getText().toString().toLowerCase().trim().replace(" ", "_");
                 char activity = spinnerEntries.get(mSpinner.getSelectedItem());
                 Intent i = new Intent(getApplicationContext(), MainActivity.class);
                 i.putExtra("ACTIVITY", activity);

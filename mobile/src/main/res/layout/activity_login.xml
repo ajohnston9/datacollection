@@ -11,7 +11,7 @@
     tools:context="wisdm.cis.fordham.edu.actipebble.LoginActivity">
 
     <TextView
-        android:text="ActiPebble"
+        android:text="ActiWatch Data Collection App"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"

@@ -13,7 +13,6 @@ import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
-import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 
 import java.io.ByteArrayInputStream;
@@ -72,11 +71,11 @@ public class DataManagementService extends WearableListenerService implements Se
     /**
      * The list of acceleration records from the watch
      */
-    private ArrayList<AccelerationRecord> mWatchAccelerationRecords;
+    private ArrayList<AccelerationRecord> mWatchAccelerationRecords = new ArrayList<AccelerationRecord>();
     /**
      * The list of gyroscopic records from the watch
      */
-    private ArrayList<GyroscopeRecord> mWatchGyroRecords;
+    private ArrayList<GyroscopeRecord> mWatchGyroRecords = new ArrayList<GyroscopeRecord>();
 
     /**
      * The list of acceleration records from the phone
@@ -158,6 +157,7 @@ public class DataManagementService extends WearableListenerService implements Se
                                     new ByteArrayInputStream(map.getByteArray("/accel"))
                             )
                             ).readObject();
+                    Log.d(TAG, "Received acceleration list is of size: " + accelTmp.size());
                     mWatchAccelerationRecords.addAll(accelTmp);
                 } else if (path.matches("/gyro-data")) {
                     DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
@@ -166,26 +166,33 @@ public class DataManagementService extends WearableListenerService implements Se
                                     new ByteArrayInputStream(map.getByteArray("/gyro"))
                             )
                             ).readObject();
+                    Log.d(TAG, "Received gyroscope list is of size: " + gyroTmp.size());
                     mWatchGyroRecords.addAll(gyroTmp);
+                    if (map.getString("/done").matches(DATA_COLLECTION_DONE)) {
+                        finalizeDataCollection();
+                    }
                 } else {
                     Log.wtf(TAG, "Received unexpected data with path " + path);
                 }
             }
         } catch (Exception e) {
-            Log.wtf(TAG, "Something happened: " +e.getClass().getName() + ": " +e.getMessage());
+            Log.wtf(TAG, "Exception in onDataChanged: " +e.getClass().getName() + ": " +e.getMessage());
         }
     }
 
-    @Override
-    public void onMessageReceived(MessageEvent messageEvent) {
-        if (messageEvent.getPath().matches(DATA_COLLECTION_DONE)) {
-            finalizeDataCollection();
-        }
-    }
+//    @Override
+//    public void onMessageReceived(MessageEvent messageEvent) {
+//        if (messageEvent.getPath().matches(DATA_COLLECTION_DONE)) {
+//            finalizeDataCollection();
+//        }
+//    }
 
     private void finalizeDataCollection() {
+        shouldSample = false;
 		Collections.sort(mWatchAccelerationRecords);
 		Collections.sort(mWatchGyroRecords);
+        Log.d(TAG, "Watch Acceleration List size is " + mWatchAccelerationRecords.size());
+        Log.d(TAG, "Watch Gyro List size is " + mWatchGyroRecords.size());
         String filename = name + "_accel_" + activity;
         String gyFilename = name + "_gyro_" + activity;
         final String watchFile = "_watch.txt";
