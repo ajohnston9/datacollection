@@ -246,21 +246,6 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                     PendingResult<DataApi.DataItemResult> pendingResult =
                             Wearable.DataApi.putDataItem(googleApiClient, request);
                 }
-//                //Signal end of data collection
-//                NodeApi.GetConnectedNodesResult nodes =
-//                        Wearable.NodeApi.getConnectedNodes(googleApiClient).await();
-//                for (Node node : nodes.getNodes()) {
-//                    MessageApi.SendMessageResult result;
-//                    Log.d(TAG, "Started message sending process.");
-//                    result= Wearable.MessageApi.sendMessage(
-//                            googleApiClient, node.getId(), DATA_COLLECTION_DONE, null).await();
-//                    Log.d(TAG, "Sent to node: " + node.getId() + " with display name: " + node.getDisplayName());
-//                    if (!result.getStatus().isSuccess()) {
-//                        Log.e(TAG, "ERROR: failed to send Message: " + result.getStatus());
-//                    } else {
-//                        Log.d(TAG, "Message Successfully sent.");
-//                    }
-//                }
                 //Vibrate and tell the user to check their phone
                 Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
                 vibrator.vibrate(500L); //Vibrate for half a second

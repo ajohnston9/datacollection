@@ -180,13 +180,6 @@ public class DataManagementService extends WearableListenerService implements Se
         }
     }
 
-//    @Override
-//    public void onMessageReceived(MessageEvent messageEvent) {
-//        if (messageEvent.getPath().matches(DATA_COLLECTION_DONE)) {
-//            finalizeDataCollection();
-//        }
-//    }
-
     private void finalizeDataCollection() {
         shouldSample = false;
 		Collections.sort(mWatchAccelerationRecords);
