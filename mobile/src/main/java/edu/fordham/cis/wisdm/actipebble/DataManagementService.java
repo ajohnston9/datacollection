@@ -26,7 +26,7 @@ import java.util.Collections;
 
 /**
  * Mananges the collection and saving of data from both the phone and smartwatch
- * @author <a href="mailto:ajohnston@fordham.edu">Andrew H. Johnston</a>
+ * @author Andrew H. Johnston <a href="mailto:ajohnston9@fordham.edu">ajohnston9@fordham.edu</a>
  * @version 1.0STABLE
  */
 public class DataManagementService extends WearableListenerService implements SensorEventListener {

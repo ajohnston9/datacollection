@@ -7,7 +7,9 @@ import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.WearableListenerService;
 
 /**
- * Created by andrew on 11/11/14.
+ * Listens for messages from the phone to start training
+ * @author Andrew H. Johnston <a href="mailto:ajohnston9@fordham.edu">ajohnston9@fordham.edu</a>
+ * @version 1.0STABLE
  */
 public class WearableService extends WearableListenerService {
 

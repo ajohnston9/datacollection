@@ -31,9 +31,12 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-
+/**
+ * Handles the collection of data and the transmission of the data back to the phone in batches.
+ * @author Andrew H. Johnston <a href="mailto:ajohnston9@fordham.edu">ajohnston9@fordham.edu</a>
+ * @version 1.0STABLE
+ */
 public class WearTrainingActivity extends Activity implements SensorEventListener {
 
     private SensorManager mSensorManager;
@@ -47,20 +50,45 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
     private ArrayList<AccelerationRecord> mAccelerationRecords = new ArrayList<AccelerationRecord>();
     private ArrayList<GyroscopeRecord> mGyroscopeRecords = new ArrayList<GyroscopeRecord>();
 
-    private AtomicBoolean shouldCollect = new AtomicBoolean(false);
+    /**
+     * Tells the Sensor if it should save the records it
+     */
+    private boolean shouldCollect = false;
 
+    /**
+     * Debugging tag
+     */
     private static final String TAG = "WearTrainingActivity";
 
+    /**
+     * One of the strategies to keep the watch screen on
+     */
     private PowerManager.WakeLock wakeLock;
 
-    //Constant used to add clarity to formulae below
+    /**
+     * Constant used to add clarity to formulae below
+     */
     private static final short MILLIS_IN_A_SECOND = 1000;
-    //Change the second multiplicand to change the number of seconds of data collected
-    private int delay         = MILLIS_IN_A_SECOND * 120;
-    //Expressed in a formula so that value makes more sense
+    /**
+     * Change the second multiplicand to change the number of seconds of data collected
+     */
+    private int delay  = MILLIS_IN_A_SECOND * 120;
+    /**
+     * Expressed in a formula so that value makes more sense
+     */
     private int maxNumRecords = (delay / MILLIS_IN_A_SECOND) * 20;
+    /**
+     * Keeps track of the number of records obtained. This is more accurate than a time-based
+     * approach.
+     */
     private int recordCount   = 0;
+    /**
+     * Sample rate, expressed as number of microseconds between samplings
+     */
     private static final int SAMPLE_RATE = 50000;
+    /**
+     * Maximum number of records we can send to the phone in one transmission.
+     */
     private static final int MAX_RECORDS_SENT_AT_ONCE = 3500;
     /**
      * Flag that signals the end of data transmission to the phone
@@ -110,7 +138,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                 .addApi(Wearable.API)
                 .build();
         googleApiClient.connect();
-        shouldCollect.set(true);
+        shouldCollect = true;
         Log.d(TAG, "Started collecting");
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK,
@@ -134,7 +162,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (shouldCollect.get()) {
+        if (shouldCollect) {
             long timestamp = System.currentTimeMillis();
             float x = event.values[0];
             float y = event.values[1];
@@ -153,6 +181,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                     mGyroscopeRecords.add(gyro);
             }
             if (recordCount > maxNumRecords) {
+                shouldCollect = false;
                 new Thread(new SendDataToPhoneTask()).start();
             }
         }
@@ -169,10 +198,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
 
         @Override
         public void run() {
-            shouldCollect.set(false);
-            wakeLock.release();
-            Log.wtf(TAG, "Ending stream");
-
+            Log.d(TAG, "Ending stream");
             try {
                 List<List<AccelerationRecord>> accelLists =
                         Lists.partition(mAccelerationRecords, MAX_RECORDS_SENT_AT_ONCE);
@@ -183,6 +209,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                   * of generics I can't do this with a single polymoprhic method.
                   */
                 for (List<AccelerationRecord> list : accelLists) {
+                    Log.d(TAG, "Sending list of acceleration records...");
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     ObjectOutputStream oos = new ObjectOutputStream(baos);
                     oos.writeObject(list);
@@ -196,6 +223,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                             Wearable.DataApi.putDataItem(googleApiClient, request);
                 }
                 for (List<GyroscopeRecord> list : gyroLists) {
+                    Log.d(TAG, "Sending list of gyroscope records...");
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     ObjectOutputStream oosG = new ObjectOutputStream(baos);
                     oosG.writeObject(list);
@@ -235,8 +263,10 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                 });
             } catch (IOException e) {
                 Log.d(TAG, "Something fucky happened: " + e.getMessage());
+            } finally {
+                //Screen can turn off now.
+                wakeLock.release();
             }
-
 
         }
     }
