@@ -85,13 +85,21 @@ public class GyroscopeRecord implements Serializable, Comparable<GyroscopeRecord
         return timestamp+","+x+","+y+","+z;
     }
 
+    /**
+     * Required to implement this method since we call Collections.sort() to sort the list by
+     * timestamp.
+     *
+     * @param record
+     * @return
+     */
 	@Override
-	public int compareTo(GyroscopeRecord that) {
-		if (that == null) {
+	public int compareTo(GyroscopeRecord record) {
+		if (record == null) {
 			throw new NullPointerException();
 		}
-		long tstmp = that.getTimestamp();
-		if (that == this || tstmp == timestamp) {
+
+		long tstmp = record.getTimestamp();
+		if (record == this || tstmp == timestamp) {
 			return 0;
 		} else if (tstmp > timestamp) {
 			return 1;

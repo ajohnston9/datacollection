@@ -110,13 +110,22 @@ public class AccelerationRecord implements Serializable, Comparable<Acceleration
         return timestamp + "," +x+","+y+","+z;
     }
 
+    /**
+     * Required to implement this method since we call Collections.sort() to sort the list by
+     * timestamp.
+     *
+     * @param record
+     * @return
+     */
     @Override
-    public int compareTo(AccelerationRecord that) {
-        if (that == null) {
+    public int compareTo(AccelerationRecord record) {
+        if (record == null) {
             throw new NullPointerException();
         }
-        long tstmp = that.getTimestamp();
-        if (that == this || tstmp == timestamp) {
+
+        long tstmp = record.getTimestamp();
+
+        if (record == this || tstmp == timestamp) {
             return 0;
         } else if (tstmp > timestamp) {
             return 1;
