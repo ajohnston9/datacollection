@@ -139,11 +139,25 @@ public class DataManagementService extends WearableListenerService implements Se
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
         registerSensorListeners();
-        //mSensorManager.registerListener(this, mAccelerometer, SAMPLE_RATE);
-        //mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
 
         //Don't restart when app is shut down and reopened
         return START_NOT_STICKY;
+    }
+
+    /**
+     * Service clean up.
+     *
+     * Release the wake lock and un registers the accelerometer and sensor listeners when
+     * collection is over.
+     */
+    @Override
+    public void onDestroy() {
+        if(wakeLock.isHeld()) {
+            wakeLock.release();
+        }
+        mSensorManager.unregisterListener(this);
+        Log.i(TAG, "Un registering phone sensor listeners.");
+        super.onDestroy();
     }
 
     /**
@@ -157,18 +171,6 @@ public class DataManagementService extends WearableListenerService implements Se
         mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
     }
 
-    /**
-     * This method releases the wake lock un registers the accelerometer and sensor listeners when
-     * collection is over.
-     *
-     */
-    private void unregisterSensorListener(){
-        if(wakeLock.isHeld()) {
-            wakeLock.release();
-        }
-        mSensorManager.unregisterListener(this);
-        Log.i(TAG, "Un registering phone sensor listeners.");
-    }
 
     /**
      * This method is called each time new sensor data is available. Checks for the sensor type and
@@ -207,9 +209,6 @@ public class DataManagementService extends WearableListenerService implements Se
 
         //Once the watch starts sending data its time to stop collecting
         shouldSample = false;
-
-        // Unregister the sensor listener
-        unregisterSensorListener();
 
         try {
             for (DataEvent event: dataEvents) {
@@ -255,7 +254,6 @@ public class DataManagementService extends WearableListenerService implements Se
      * to the appropriate data structure in memory.
      */
     private void finalizeDataCollection() {
-        shouldSample = false;
 
         // Sort the lists in ascending order of timestamp
 		Collections.sort(mWatchAccelerationRecords);
