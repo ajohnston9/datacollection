@@ -7,6 +7,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.PowerManager;
+import android.os.StrictMode;
 import android.os.Vibrator;
 import android.util.Log;
 
@@ -102,12 +103,12 @@ public class DataManagementService extends WearableListenerService implements Se
     /**
      * The email used to send the data
      */
-    private static final String EMAIL_SENDER = "wisdm.gaitlab@gmail.com";
+    public static final String EMAIL_SENDER = "wisdm.gaitlab@gmail.com";
 
     /**
      * The password for the sender's email
      */
-    private static final String EMAIL_PASSWORD = "WiSdM403!";
+    public static final String EMAIL_PASSWORD = "WiSdM403!";
 
     /**
      * The email to send the data to
@@ -138,7 +139,10 @@ public class DataManagementService extends WearableListenerService implements Se
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
-        registerSensorListeners();
+        //wakeLock.acquire();
+        mSensorManager.registerListener(this, mAccelerometer, SAMPLE_RATE);
+        mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
+        shouldSample = true;
 
         //Don't restart when app is shut down and reopened
         return START_NOT_STICKY;
@@ -169,6 +173,7 @@ public class DataManagementService extends WearableListenerService implements Se
         wakeLock.acquire();
         mSensorManager.registerListener(this, mAccelerometer, SAMPLE_RATE);
         mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
+        shouldSample = true;
     }
 
 
@@ -191,6 +196,7 @@ public class DataManagementService extends WearableListenerService implements Se
                     mPhoneAccelerationRecords.add(new AccelerationRecord(x,y,z,time));
                     break;
                 case Sensor.TYPE_GYROSCOPE:
+                    Log.wtf(TAG, "Gyro data");
                     mPhoneGyroRecords.add(new GyroscopeRecord(x,y,z,time));
             }
 
@@ -373,6 +379,8 @@ public class DataManagementService extends WearableListenerService implements Se
          */
         @Override
         public void run() {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
             GMailSender sender = new GMailSender(user, pass);
             try {
                 File[] attach = {watchAccel, phoneAccel, watchGyro,phoneGyro};

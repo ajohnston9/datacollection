@@ -1,8 +1,11 @@
 package edu.fordham.cis.wisdm.actipebble;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,6 +15,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -41,6 +46,11 @@ public class LoginActivity extends Activity {
      * The map that maps a character to its activity name
      */
     private static HashMap<String,Character> spinnerEntries = new HashMap<String, Character>();
+
+    /**
+     * A button to force data to be sent to an email
+     */
+    private Button mForceDataSend;
 
     //I know this is ugly, but it has to go *somewhere*
     static {
@@ -100,7 +110,54 @@ public class LoginActivity extends Activity {
 
             }
         });
+        mForceDataSend = (Button) findViewById(R.id.pushDataButton);
+        mForceDataSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder alert = new AlertDialog.Builder(LoginActivity.this);
+                alert.setTitle("Force send data");
+                alert.setMessage("Enter email to send data to: ");
+                final EditText input = new EditText(LoginActivity.this);
+                alert.setView(input);
+                alert.setPositiveButton("Send", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        final String email = input.getText().toString();
+                        //Do work in new thread so UI doesn't get clogged up
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+                                StrictMode.setThreadPolicy(policy);
+                                GMailSender sender = new GMailSender(DataManagementService.EMAIL_SENDER, DataManagementService.EMAIL_PASSWORD);
+                                ArrayList<File> files = new ArrayList<File>();
+                                File[] dirfiles = getFilesDir().listFiles();
+                                for (File file : dirfiles) {
+                                    if (!file.isDirectory() && file.getName().endsWith(".txt")) {
+                                        files.add(file);
+                                    }
+                                }
+                                File[] toSend = files.toArray(new File[files.size()]);
+                                try {
+                                    sender.sendMail("Data dump from phone", "Attached are all files on phone", DataManagementService.EMAIL_SENDER, email, toSend);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }).start();
 
+                    }
+                });
+                alert.setNegativeButton("Forget it", new DialogInterface.OnClickListener(){
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //Do nothing
+                    }
+                });
+                alert.show();
+            }
+        });
         mStartTraining = (Button)findViewById(R.id.login);
 
         mStartTraining.setOnClickListener(new View.OnClickListener() {
