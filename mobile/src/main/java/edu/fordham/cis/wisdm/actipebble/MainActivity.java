@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
     /**
      * Text views to display pebble accelerometer info
      */
-    private TextView mActivity, mUsername;
+    private TextView mEmail, mSex, mUsername;
 
     /**
      * Flag to send to watch to trigger the start of training
@@ -48,19 +48,20 @@ public class MainActivity extends Activity {
     private static final String START_TRAINING = "/start-training";
 
     /**
-     * The label for the activity being done
-     */
-    private char   label;
-
-    /**
      * The user's name
      */
     private String name;
 
     /**
-     * The name of the activity to be collected
+     * The user's email
      */
-    private String actname;
+    private String email;
+
+    /**
+     * The user's sex
+     */
+    private char sex;
+
 
     /**
      * Flag for determining if data collection is occuring
@@ -93,17 +94,20 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         Intent i = getIntent();
         if (i != null) {
-            label = i.getCharExtra("ACTIVITY", 'A');
             name  = i.getStringExtra("NAME");
-            actname = i.getStringExtra("ACTIVITY_NAME");
+            email = i.getStringExtra("EMAIL");
+            sex = i.getCharExtra("SEX", 'M');
         } else {
-            Toast.makeText(this, "Started without name or activity label", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Started without name, email, or sex", Toast.LENGTH_LONG).show();
         }
-        mActivity = (TextView)findViewById(R.id.activity_label);
+
         mUsername = (TextView)findViewById(R.id.username);
+//        mEmail = (TextView)findViewById(R.id.email);
+//        mSex = (TextView)findViewById(R.id.sex);
 
         mUsername.setText(name);
-        mActivity.setText(actname);
+        mEmail.setText(email);
+        mSex.setText(sex);
 
         mStartButton = (Button)findViewById(R.id.start_button);
         mStopButton = (Button)findViewById(R.id.stop_button);
@@ -171,7 +175,8 @@ public class MainActivity extends Activity {
 
             service = new Intent(this, DataManagementService.class);
             service.putExtra("NAME", name);
-            service.putExtra("ACTIVITY", label);
+            service.putExtra("EMAIL", email);
+            service.putExtra("SEX", sex);
             startService(service);
             new Thread(new Worker()).start();
             try {

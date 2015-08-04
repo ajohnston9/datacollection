@@ -16,6 +16,8 @@ import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.WearableListenerService;
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -37,15 +39,12 @@ public class DataManagementService extends WearableListenerService implements Se
      */
     private static final String TAG = "DataManagementService";
 
-    /**
-     * The user's name
-     */
-    private String userName;
 
     /**
-     * The label for the activity being performed
+     * The container for user's data
      */
-    private char activity;
+    BiometricSignature signature;
+
 
     /**
      * The sampling rate in microseconds to collect acceleration records at (this is 20Hz)
@@ -103,17 +102,7 @@ public class DataManagementService extends WearableListenerService implements Se
     /**
      * The email used to send the data
      */
-    public static final String EMAIL_SENDER = "wisdm.gaitlab@gmail.com";
-
-    /**
-     * The password for the sender's email
-     */
-    public static final String EMAIL_PASSWORD = "WiSdM403!";
-
-    /**
-     * The email to send the data to
-     */
-    private static final String EMAIL_RECIPIENT = "wisdm.gaitlab@gmail.com";
+    public static final String HOSTNAME = "tartarus.cis.fordham.edu";
 
     /**
      * Flag that signals the end of data transmission from the watch
@@ -129,8 +118,9 @@ public class DataManagementService extends WearableListenerService implements Se
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        userName = intent.getStringExtra("NAME");
-        activity = intent.getCharExtra("ACTIVITY", 'A');
+        signature.setName(intent.getStringExtra("NAME"));
+        signature.setEmail(intent.getStringExtra("EMAIL"));
+        signature.setSex(intent.getCharExtra("SEX", 'M'));
 
         powerManager = (PowerManager)getApplicationContext().getSystemService(Context.POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
@@ -268,25 +258,21 @@ public class DataManagementService extends WearableListenerService implements Se
         Log.i(TAG, "Watch Acceleration List size is " + mWatchAccelerationRecords.size());
         Log.i(TAG, "Watch Gyro List size is " + mWatchGyroRecords.size());
 
-        String filename = userName + "_accel_" + activity;
-        String gyFilename = userName + "_gyro_" + activity;
+        signature.setConvertedWatchAccel(mWatchAccelerationRecords);
+        signature.setConvertedWatchGyro(mWatchGyroRecords);
+        signature.setConvertedPhoneAccel(mPhoneAccelerationRecords);
+        signature.setConvertedPhoneGyro(mPhoneGyroRecords);
 
-        final String watchFile = "_watch.txt";
-        final String phoneFile = "_phone.txt";
+
+        Gson gson = new Gson();
+        String json = gson.toJson(signature);
+        String filename = signature.getName() + ".txt";
 
         // Write the sensor records to files on the phone's disk
-        writeToFile(mWatchAccelerationRecords, filename+watchFile);
-        writeToFile(mPhoneAccelerationRecords, filename+phoneFile);
-        writeToFileGyro(mWatchGyroRecords, gyFilename + watchFile);
-        writeToFileGyro(mPhoneGyroRecords, gyFilename+phoneFile);
+        writeToFile(filename, json);
 
         // Email all 4 files as attachments
-        new Thread(
-                new SendData(EMAIL_SENDER, EMAIL_PASSWORD,
-                        filename+watchFile,
-                        filename+phoneFile,
-                        gyFilename + watchFile,
-                        gyFilename+phoneFile)).start();
+        new Thread(new SendData(HOSTNAME, filename, json)).start();
 
         // Vibrate half a second for the user's sake
         Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
@@ -294,41 +280,16 @@ public class DataManagementService extends WearableListenerService implements Se
     }
 
     /**
-     * This method write the acceleration records to a file on the phone.
+     * This method write the BiometricSignature to a JSON file on the phone.
      *
-     * @param accelerationRecords
      * @param filename
      */
-    private void writeToFile(ArrayList<AccelerationRecord> accelerationRecords, String filename) {
+    private void writeToFile(String filename, String json) {
         File file = new File(getFilesDir(), filename);
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(file);
-            for (AccelerationRecord record : accelerationRecords) {
-                writer.println(record.toString());
-            }
-            writer.flush();
-            writer.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        Log.i(TAG, "File location is: " + file.getAbsolutePath());
-    }
-
-    /**
-     * This method writes the gyroscope records to a file on the phone.
-     *
-     * @param gyroscopeRecords
-     * @param filename
-     */
-    private void writeToFileGyro(ArrayList<GyroscopeRecord> gyroscopeRecords, String filename) {
-        File file = new File(getFilesDir(), filename);
-        PrintWriter writer = null;
-        try {
-            writer = new PrintWriter(file);
-            for (GyroscopeRecord record : gyroscopeRecords) {
-                writer.println(record.toString());
-            }
+            writer.println(json);
             writer.flush();
             writer.close();
         } catch (FileNotFoundException e) {
@@ -346,30 +307,19 @@ public class DataManagementService extends WearableListenerService implements Se
      * Takes the data files and sends them to the appropriate emails
      */
     class SendData implements Runnable {
-        private String user;
-        private String pass;
-        private File watchAccel;
-        private File phoneAccel;
-        private File watchGyro;
-        private File phoneGyro;
+        private String hostname;
+        private File datafile;
+        private String json;
 
         /**
          * Provides arguments so the thread can send email appropriately
-         * @param u The email of the sender
-         * @param p The password to the sender's email
-         * @param wA The filename for the watch accel file
-         * @param fA The filename for the phone accel file
-         * @param wG The filename for the watch gyro file
-         * @param pG The filename for the phone accel file
+         * @param h The hostname of server
+         * @param d The filename for the user's JSON data
          */
-        public SendData(String u, String p, String wA, String fA, String wG, String pG) {
-            user = u;
-            pass = p;
-            watchAccel = new File(getFilesDir(), wA);
-            phoneAccel = new File(getFilesDir(), fA);
-            watchGyro = new File(getFilesDir(), wG);
-            phoneGyro = new File(getFilesDir(), pG);
-
+        public SendData(String h, String d, String j) {
+            hostname = h;
+            datafile = new File(getFilesDir(), d);
+            json = j;
         }
 
         /**
@@ -381,10 +331,8 @@ public class DataManagementService extends WearableListenerService implements Se
         public void run() {
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
-            GMailSender sender = new GMailSender(user, pass);
             try {
-                File[] attach = {watchAccel, phoneAccel, watchGyro,phoneGyro};
-                sender.sendMail("Data for " + userName, "This is the data", user, EMAIL_RECIPIENT, attach);
+                //send json string to server
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
             }

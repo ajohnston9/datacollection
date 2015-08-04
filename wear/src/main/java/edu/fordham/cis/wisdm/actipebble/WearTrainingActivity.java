@@ -203,7 +203,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
                         Lists.partition(mGyroscopeRecords, MAX_RECORDS_SENT_AT_ONCE);
                  /* I know the following two for loops look like they could be
                   * abstracted into a single generic method, but due to type erasure
-                  * of generics I can't do this with a single polymoprhic method.
+                  * of generics I can't do this with a single polymorphic method.
                   */
                 for (List<AccelerationRecord> list : accelLists) {
                     Log.d(TAG, "Sending list of acceleration records...");
