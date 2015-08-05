@@ -2,22 +2,11 @@ package edu.fordham.cis.wisdm.actipebble;
 
 import android.util.Log;
 
-import com.google.android.gms.wearable.DataMap;
-import com.sun.mail.iap.ByteArray;
-
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-/**
- * Wraps connections to the database and provides an easily accessible API.
- * @author Susanne George <a href="mailto:sgeorge15@fordham.edu">sgeorge15@fordham.edu</a>
- * @author Andrew Johnston <a href="mailto:ajohnston9@fordham.edu">ajohnston9@fordham.edu</a>
- * @version 0.01ALPHA
- */
 public class BiometricSignature {
 
     private static final String TAG = "BiometricSignature";

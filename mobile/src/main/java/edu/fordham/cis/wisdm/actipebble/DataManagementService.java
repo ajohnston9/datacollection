@@ -202,8 +202,7 @@ public class DataManagementService extends WearableListenerService implements Se
     }
 
     /**
-     * This method write the BiometricSignature to a JSON file on the phone.
-     *
+     * This method writes the deserialized BiometricSignature to a file on the phone.
      * @param filename
      */
     private void writeToFile(String filename) {

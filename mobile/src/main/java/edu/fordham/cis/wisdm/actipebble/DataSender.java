@@ -11,25 +11,43 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 /**
- * Takes the data files and sends them to the appropriate emails
+ * Sends contents of a JSON file to the appropriate server
  */
 public class DataSender implements Runnable {
     private static final String TAG = "DataSender";
     private static final String HOSTNAME = "tartarus.cis.fordham.edu";
     private static final int PORT = 1234;
-    private File datafile;
+    private Context context;
+    private String filename;
 
     /**
-     * Provides arguments so the thread can send email appropriately
-     * @param datafile The filename for the user's JSON data
+     * Provides arguments so the thread can send data appropriately
+     * @param context //TODO: i don't know what context means
+     * @param filename The filename containing the user's JSON data
      */
-    public DataSender(Context ctxt, String datafile) {
-        this.datafile = new File(ctxt.getFilesDir(), datafile);
+    public DataSender(Context context, String filename) {
+        this.context = context;
+        this.filename = filename;
     }
 
     /**
-     * Method called when the runnable is initiated in the thread. This sends an email
-     * containing the sensor data in another Thread.
+     * Reads JSON file contents into a string
+     * @return The string containing JSON representation of user's data
+     */
+    private String getJSON() throws Exception {
+        File file = new File(context.getFilesDir(), filename);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+        StringBuilder builder = new StringBuilder();
+        String line = null;
+        while ((reader.readLine()) != null) {
+            builder.append(line);
+        }
+        return builder.toString();
+    }
+
+    /**
+     * Method called when the runnable is initiated in the thread.
+     * This sends a JSON string representation of the user's data to the server at HOSTNAME & PORT.
      */
     @Override
     public void run() {
@@ -37,18 +55,12 @@ public class DataSender implements Runnable {
         StrictMode.setThreadPolicy(policy);
         try {
             Socket echoSocket = new Socket(HOSTNAME, PORT);
-            PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(datafile)));
-            StringBuilder builder = new StringBuilder();
-            String line = null;
-            while ((reader.readLine()) != null) {
-                builder.append(line);
-            }
-            out.println(builder.toString());
-            out.close();
+            PrintWriter writer = new PrintWriter(echoSocket.getOutputStream(), true);
+            writer.println(getJSON());
+            writer.close();
+            context.deleteFile(filename);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
-
         }
     }
 

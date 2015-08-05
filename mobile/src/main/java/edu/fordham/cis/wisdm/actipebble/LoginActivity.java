@@ -114,7 +114,7 @@ public class LoginActivity extends Activity {
             public void onClick(View view) {
                 AlertDialog.Builder alert = new AlertDialog.Builder(LoginActivity.this);
                 alert.setTitle("Force send data");
-                alert.setMessage("Enter email to send data to: ");
+//                alert.setMessage("Enter email to send data to: "); //FIXME: is removing this OK?
                 final EditText input = new EditText(LoginActivity.this);
                 alert.setView(input);
                 alert.setPositiveButton("Send", new DialogInterface.OnClickListener() {
