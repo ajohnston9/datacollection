@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,7 +15,6 @@ import android.widget.EditText;
 import android.widget.Spinner;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -122,33 +120,16 @@ public class LoginActivity extends Activity {
                 alert.setPositiveButton("Send", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        final String email = input.getText().toString();
-                        //Do work in new thread so UI doesn't get clogged up
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-                                StrictMode.setThreadPolicy(policy);
-                                GMailSender sender = new GMailSender(DataManagementService.EMAIL_SENDER, DataManagementService.EMAIL_PASSWORD);
-                                ArrayList<File> files = new ArrayList<File>();
-                                File[] dirfiles = getFilesDir().listFiles();
-                                for (File file : dirfiles) {
-                                    if (!file.isDirectory() && file.getName().endsWith(".txt")) {
-                                        files.add(file);
-                                    }
-                                }
-                                File[] toSend = files.toArray(new File[files.size()]);
-                                try {
-                                    sender.sendMail("Data dump from phone", "Attached are all files on phone", DataManagementService.EMAIL_SENDER, email, toSend);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
+                        File[] dirfiles = getFilesDir().listFiles();
+                        for (File file : dirfiles) {
+                            if (!file.isDirectory() && file.getName().endsWith(".txt")) {
+                                new Thread(new DataSender(getBaseContext(), file.getName())).start();
                             }
-                        }).start();
-
+                        }
+                        //Do work in new thread so UI doesn't get clogged up
                     }
                 });
-                alert.setNegativeButton("Forget it", new DialogInterface.OnClickListener(){
+                alert.setNegativeButton("Forget it", new DialogInterface.OnClickListener() {
 
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

@@ -7,7 +7,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.PowerManager;
-import android.os.StrictMode;
 import android.os.Vibrator;
 import android.util.Log;
 
@@ -17,16 +16,13 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.ObjectInputStream;
 import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Mananges the collection and saving of data from both the phone and smartwatch
@@ -40,12 +36,10 @@ public class DataManagementService extends WearableListenerService implements Se
      */
     private static final String TAG = "DataManagementService";
 
-
     /**
-     * The container for user's data
+     * The BiometricSignature representation of the user's data
      */
     BiometricSignature signature;
-
 
     /**
      * The sampling rate in microseconds to collect acceleration records at (this is 20Hz)
@@ -83,25 +77,6 @@ public class DataManagementService extends WearableListenerService implements Se
     private Sensor mGyroscope;
 
     /**
-     * The list of acceleration records from the watch
-     */
-    private ArrayList<AccelerationRecord> mWatchAccelerationRecords = new ArrayList<AccelerationRecord>();
-    /**
-     * The list of gyroscopic records from the watch
-     */
-    private ArrayList<GyroscopeRecord> mWatchGyroRecords = new ArrayList<GyroscopeRecord>();
-
-    /**
-     * The list of acceleration records from the phone
-     */
-    private ArrayList<AccelerationRecord> mPhoneAccelerationRecords = new ArrayList<AccelerationRecord>();
-    /**
-     * The list of gyroscopic records from the phone
-     */
-    private ArrayList<GyroscopeRecord> mPhoneGyroRecords = new ArrayList<GyroscopeRecord>();
-
-
-    /**
      * Flag that signals the end of data transmission from the watch
      */
     private static final String DATA_COLLECTION_DONE = "/thats-all-folks";
@@ -119,14 +94,14 @@ public class DataManagementService extends WearableListenerService implements Se
         signature.setEmail(intent.getStringExtra("EMAIL"));
         signature.setSex(intent.getCharExtra("SEX", 'M'));
 
-        powerManager = (PowerManager)getApplicationContext().getSystemService(Context.POWER_SERVICE);
+        powerManager = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
-        //wakeLock.acquire();
+        wakeLock.acquire();
         mSensorManager.registerListener(this, mAccelerometer, SAMPLE_RATE);
         mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
         shouldSample = true;
@@ -147,20 +122,8 @@ public class DataManagementService extends WearableListenerService implements Se
             wakeLock.release();
         }
         mSensorManager.unregisterListener(this);
-        Log.i(TAG, "Un registering phone sensor listeners.");
+        Log.i(TAG, "Un-registering phone sensor listeners.");
         super.onDestroy();
-    }
-
-    /**
-     * This method acquires the wake lock and registers the accelerometer and sensor listeners at
-     * the chosen SAMPLE_RATE.
-     *
-     */
-    private void registerSensorListeners(){
-        wakeLock.acquire();
-        mSensorManager.registerListener(this, mAccelerometer, SAMPLE_RATE);
-        mSensorManager.registerListener(this, mGyroscope, SAMPLE_RATE);
-        shouldSample = true;
     }
 
 
@@ -180,14 +143,11 @@ public class DataManagementService extends WearableListenerService implements Se
 
             switch(event.sensor.getType()) {
                 case Sensor.TYPE_ACCELEROMETER:
-                    mPhoneAccelerationRecords.add(new AccelerationRecord(x,y,z,time));
+                    signature.pushPhoneAccel(new AccelerationRecord(x,y,z,time));
                     break;
                 case Sensor.TYPE_GYROSCOPE:
-                    Log.wtf(TAG, "Gyro data");
-                    mPhoneGyroRecords.add(new GyroscopeRecord(x,y,z,time));
+                    signature.pushPhoneGyro(new GyroscopeRecord(x,y,z,time));
             }
-
-
         }
     }
 
@@ -199,46 +159,20 @@ public class DataManagementService extends WearableListenerService implements Se
      */
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
-
         //Once the watch starts sending data its time to stop collecting
         shouldSample = false;
 
-        try {
-            for (DataEvent event: dataEvents) {
-                String path = event.getDataItem().getUri().getPath();
-
-                if (path.matches("/accel-data")) {
-
-                    DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
-                    ArrayList<AccelerationRecord> accelTmp = (ArrayList<AccelerationRecord>)
-                            (new ObjectInputStream(
-                                    new ByteArrayInputStream(map.getByteArray("/accel"))
-                            )
-                            ).readObject();
-                    mWatchAccelerationRecords.addAll(accelTmp);
-                    Log.i(TAG, "Received acceleration list is of size: " + accelTmp.size());
-
-                } else if (path.matches("/gyro-data")) {
-
-                    DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
-                    ArrayList<GyroscopeRecord> gyroTmp = (ArrayList<GyroscopeRecord>)
-                            (new ObjectInputStream(
-                                    new ByteArrayInputStream(map.getByteArray("/gyro"))
-                            )
-                            ).readObject();
-                    mWatchGyroRecords.addAll(gyroTmp);
-                    Log.i(TAG, "Received gyroscope list is of size: " + gyroTmp.size());
-
-                    if (map.getString("/done").matches(DATA_COLLECTION_DONE)) {
-                        finalizeDataCollection();
-                    }
-
-                } else {
-                    Log.e(TAG, "Received unexpected data with path " + path);
-                }
+        for (DataEvent event: dataEvents) {
+            String path = event.getDataItem().getUri().getPath();
+            if (path.matches("/accel-data")) {
+                DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
+                signature.pushWatchAccel(map.getByteArray("/accel"));
+            } else if (path.matches("/gyro-data")) {
+                DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
+                signature.pushWatchGyro(map.getByteArray("/gyro"));
+            } else {
+                Log.e(TAG, "Received unexpected data with path " + path);
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Exception in onDataChanged: " + e.getClass().getName() + ": " + e.getMessage());
         }
     }
 
@@ -249,24 +183,18 @@ public class DataManagementService extends WearableListenerService implements Se
     private void finalizeDataCollection() {
 
         // Sort the lists in ascending order of timestamp
-		Collections.sort(mWatchAccelerationRecords);
-		Collections.sort(mWatchGyroRecords);
+        signature.sortWatchRecords();
 
-        Log.i(TAG, "Watch Acceleration List size is " + mWatchAccelerationRecords.size());
-        Log.i(TAG, "Watch Gyro List size is " + mWatchGyroRecords.size());
+        Log.i(TAG, "Watch Acceleration List size is " + signature.getWatchAccel().size());
+        Log.i(TAG, "Watch Gyro List size is " + signature.getWatchGyro().size());
 
-        signature.setConvertedWatchAccel(mWatchAccelerationRecords);
-        signature.setConvertedWatchGyro(mWatchGyroRecords);
-        signature.setConvertedPhoneAccel(mPhoneAccelerationRecords);
-        signature.setConvertedPhoneGyro(mPhoneGyroRecords);
-
-        String filename = signature.getName() + ".txt";
+        DateFormat dateFormat = new SimpleDateFormat("MMddyy");
+        String filename = signature.getName() + dateFormat.format(new Date()) + ".txt";
 
         // Write the sensor records to files on the phone's disk
         writeToFile(filename);
 
-        // Email all 4 files as attachments
-        new Thread(new SendData(signature, filename)).start();
+        new Thread(new DataSender(this, filename)).start();
 
         // Vibrate half a second for the user's sake
         Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
@@ -296,46 +224,5 @@ public class DataManagementService extends WearableListenerService implements Se
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         //Not actually needed but must be overridden
-    }
-
-    /**
-     * Takes the data files and sends them to the appropriate emails
-     */
-    class SendData implements Runnable {
-        private static final String HOSTNAME = "tartarus.cis.fordham.edu";
-        private static final int PORT = 1234;
-        private File datafile;
-        private BiometricSignature signature;
-
-        /**
-         * Provides arguments so the thread can send email appropriately
-         * @param datafile The filename for the user's JSON data
-         */
-        public SendData(BiometricSignature signature, String datafile) {
-            this.datafile = new File(getFilesDir(), datafile);
-            this.signature = signature;
-        }
-
-        /**
-         * Method called when the runnable is initiated in the thread. This sends an email
-         * containing the sensor data in another Thread.
-         *
-         */
-        @Override
-        public void run() {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-            try {
-                Socket echoSocket = new Socket(HOSTNAME, PORT);
-                PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
-                Gson gson = new Gson();
-                gson.toJson(signature, out);
-
-            } catch (Exception e) {
-                Log.e(TAG, e.getMessage());
-
-            }
-        }
-
     }
 }

@@ -102,7 +102,7 @@ public class MainActivity extends Activity {
         }
 
         mUsername = (TextView)findViewById(R.id.username);
-//        mEmail = (TextView)findViewById(R.id.email);
+//        mEmail = (TextView)findViewById(R.id.email); //TODO: uncomment these
 //        mSex = (TextView)findViewById(R.id.sex);
 
         mUsername.setText(name);
