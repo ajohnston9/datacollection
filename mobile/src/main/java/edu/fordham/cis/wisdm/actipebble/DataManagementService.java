@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -99,10 +100,6 @@ public class DataManagementService extends WearableListenerService implements Se
      */
     private ArrayList<GyroscopeRecord> mPhoneGyroRecords = new ArrayList<GyroscopeRecord>();
 
-    /**
-     * The email used to send the data
-     */
-    public static final String HOSTNAME = "tartarus.cis.fordham.edu";
 
     /**
      * Flag that signals the end of data transmission from the watch
@@ -263,16 +260,13 @@ public class DataManagementService extends WearableListenerService implements Se
         signature.setConvertedPhoneAccel(mPhoneAccelerationRecords);
         signature.setConvertedPhoneGyro(mPhoneGyroRecords);
 
-
-        Gson gson = new Gson();
-        String json = gson.toJson(signature);
         String filename = signature.getName() + ".txt";
 
         // Write the sensor records to files on the phone's disk
-        writeToFile(filename, json);
+        writeToFile(filename);
 
         // Email all 4 files as attachments
-        new Thread(new SendData(HOSTNAME, filename, json)).start();
+        new Thread(new SendData(signature, filename)).start();
 
         // Vibrate half a second for the user's sake
         Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
@@ -284,12 +278,13 @@ public class DataManagementService extends WearableListenerService implements Se
      *
      * @param filename
      */
-    private void writeToFile(String filename, String json) {
+    private void writeToFile(String filename) {
         File file = new File(getFilesDir(), filename);
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(file);
-            writer.println(json);
+            Gson gson = new Gson();
+            gson.toJson(signature, writer);
             writer.flush();
             writer.close();
         } catch (FileNotFoundException e) {
@@ -307,19 +302,18 @@ public class DataManagementService extends WearableListenerService implements Se
      * Takes the data files and sends them to the appropriate emails
      */
     class SendData implements Runnable {
-        private String hostname;
+        private static final String HOSTNAME = "tartarus.cis.fordham.edu";
+        private static final int PORT = 1234;
         private File datafile;
-        private String json;
+        private BiometricSignature signature;
 
         /**
          * Provides arguments so the thread can send email appropriately
-         * @param h The hostname of server
-         * @param d The filename for the user's JSON data
+         * @param datafile The filename for the user's JSON data
          */
-        public SendData(String h, String d, String j) {
-            hostname = h;
-            datafile = new File(getFilesDir(), d);
-            json = j;
+        public SendData(BiometricSignature signature, String datafile) {
+            this.datafile = new File(getFilesDir(), datafile);
+            this.signature = signature;
         }
 
         /**
@@ -332,9 +326,14 @@ public class DataManagementService extends WearableListenerService implements Se
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
             try {
-                //send json string to server
+                Socket echoSocket = new Socket(HOSTNAME, PORT);
+                PrintWriter out = new PrintWriter(echoSocket.getOutputStream(), true);
+                Gson gson = new Gson();
+                gson.toJson(signature, out);
+
             } catch (Exception e) {
                 Log.e(TAG, e.getMessage());
+
             }
         }
 
