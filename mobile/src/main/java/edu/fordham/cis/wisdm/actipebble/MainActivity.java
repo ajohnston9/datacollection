@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
     /**
      * Text views to display pebble accelerometer info
      */
-    private TextView mEmail, mSex, mUsername;
+    private TextView  mUsername;
 
     /**
      * Flag to send to watch to trigger the start of training
@@ -92,22 +92,19 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Intent i = getIntent();
-        if (i != null) {
-            name  = i.getStringExtra("NAME");
-            email = i.getStringExtra("EMAIL");
-            sex = i.getCharExtra("SEX", 'M');
+        Intent intent = getIntent();
+        if (intent != null) {
+            name  = intent.getStringExtra("NAME");
+            email = intent.getStringExtra("EMAIL");
+            sex = intent.getCharExtra("SEX", 'M');
         } else {
             Toast.makeText(this, "Started without name, email, or sex", Toast.LENGTH_LONG).show();
         }
 
         mUsername = (TextView)findViewById(R.id.username);
-//        mEmail = (TextView)findViewById(R.id.email); //TODO: edit UI and then uncomment these
-//        mSex = (TextView)findViewById(R.id.sex);
 
         mUsername.setText(name);
-        mEmail.setText(email);
-        mSex.setText(sex);
+
 
         mStartButton = (Button)findViewById(R.id.start_button);
         mStopButton = (Button)findViewById(R.id.stop_button);
@@ -180,7 +177,10 @@ public class MainActivity extends Activity {
             startService(service);
             new Thread(new Worker()).start();
             try {
-                unregisterReceiver(mReceiver);
+                if (isReceiverRegistered) {
+                    unregisterReceiver(mReceiver);
+                    isReceiverRegistered = false;
+                }
             } catch (IllegalArgumentException e) {
                 Log.i(TAG, "Unregistered receiver was asked to unregister. Ignoring.");
             }

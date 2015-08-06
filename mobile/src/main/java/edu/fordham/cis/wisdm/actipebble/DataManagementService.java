@@ -187,12 +187,12 @@ public class DataManagementService extends WearableListenerService implements Se
 
         // Sort the lists in ascending order of timestamp
         signature.sortWatchRecords();
-
+        Log.wtf(TAG, "FINALIZE HAS BEEN CALLED");
         Log.i(TAG, "Watch Acceleration List size is " + signature.getWatchAccel().size());
         Log.i(TAG, "Watch Gyro List size is " + signature.getWatchGyro().size());
 
         DateFormat dateFormat = new SimpleDateFormat("MMddyy");
-        String filename = signature.getName() + dateFormat.format(new Date()) + ".txt";
+        String filename = signature.getName() + "_" + dateFormat.format(new Date()) + ".txt";
 
         // Write the sensor records to files on the phone's disk
         writeToFile(filename);

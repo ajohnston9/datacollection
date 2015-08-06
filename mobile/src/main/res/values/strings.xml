@@ -6,5 +6,5 @@
     <string name="title_activity_login">LoginActivity</string>
     <string name="hello_world">Hello world!</string>
     <string name="prompt">Please fill in your name and select the desired activity. No action is required on the watch.</string>
-    <string name="copyright">© 2014 Fordham University WISDM Lab.</string>
+    <string name="copyright">© 2015 Fordham University WISDM Lab.</string>
 </resources>

@@ -39,7 +39,7 @@ public class DataSender implements Runnable {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
         StringBuilder builder = new StringBuilder();
         String line = null;
-        while ((reader.readLine()) != null) {
+        while ((line = reader.readLine()) != null) {
             builder.append(line);
         }
         return builder.toString();
@@ -51,14 +51,17 @@ public class DataSender implements Runnable {
      */
     @Override
     public void run() {
+        Log.wtf(TAG, "Data Sender Running");
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
         try {
             Socket echoSocket = new Socket(HOSTNAME, PORT);
             PrintWriter writer = new PrintWriter(echoSocket.getOutputStream(), true);
-            writer.println(getJSON());
+            String JSON = getJSON();
+            writer.println(JSON);
             writer.close();
             context.deleteFile(filename);
+            Log.wtf(TAG, "Data Sender Succeeded");
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }

@@ -17,14 +17,6 @@
         android:padding="5dp"
         android:textSize="20sp"/>
     <TextView
-        android:text="Activity"
-        android:id="@+id/activity_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:padding="5dp"
-        android:textSize="30sp"/>
-    <TextView
         android:text="If the activity above is not correct, please hit the cancel button below"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -23,17 +23,42 @@
         android:layout_margin="10dp"
         android:hint="Enter your name"/>
 
-
-    <Spinner
+    <EditText
+        android:id="@+id/email"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/spinner" />
+        android:layout_margin="10dp"
+        android:hint="Enter your email"
+        />
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:id="@+id/radioGrpSex">
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Male"
+            android:id="@+id/isMale"
+            />
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="50dp"
+            android:text="Female"
+
+            android:id="@+id/isFemale"/>
+    </RadioGroup>
+
+
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/login"
-        android:text="Register this activity"/>
+        android:text="Submit"/>
 
     <TextView
         android:layout_width="match_parent"
