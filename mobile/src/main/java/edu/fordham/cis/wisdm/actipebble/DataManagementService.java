@@ -16,6 +16,7 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.WearableListenerService;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -213,7 +214,10 @@ public class DataManagementService extends WearableListenerService implements Se
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(file);
-            Gson gson = new Gson();
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.registerTypeAdapter(AccelerationRecord.class, new AccelerationRecordSerializer());
+            gsonBuilder.registerTypeAdapter(GyroscopeRecord.class, new GyroscopeRecordSerializer());
+            Gson gson = gsonBuilder.create();
             gson.toJson(signature, writer);
             writer.flush();
             writer.close();
