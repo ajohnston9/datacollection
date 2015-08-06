@@ -26,19 +26,19 @@ public class BiometricSignature {
     /**
      * A list of phone accel records. Filled by Gson automatically, no setters/constructors
      */
-    private ArrayList<AccelerationRecord> phoneAccel;
+    private ArrayList<AccelerationRecord> phoneAccel = new ArrayList<>();
     /**
      * A list of phone accel records. Filled by Gson automatically, no setters/constructors
      */
-    private ArrayList<GyroscopeRecord> phoneGyro;
+    private ArrayList<GyroscopeRecord> phoneGyro = new ArrayList<>();
     /**
      * A list of phone accel records. Filled by Gson automatically, no setters/constructors
      */
-    private ArrayList<AccelerationRecord> watchAccel;
+    private ArrayList<AccelerationRecord> watchAccel = new ArrayList<>();
     /**
      * A list of phone accel records. Filled by Gson automatically, no setters/constructors
      */
-    private ArrayList<GyroscopeRecord> watchGyro;
+    private ArrayList<GyroscopeRecord> watchGyro = new ArrayList<>();
 
     /**
      * Gson requires a default constructor, but there is no initialization to do so it is empty.

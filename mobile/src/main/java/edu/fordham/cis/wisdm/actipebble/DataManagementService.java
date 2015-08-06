@@ -39,7 +39,7 @@ public class DataManagementService extends WearableListenerService implements Se
     /**
      * The BiometricSignature representation of the user's data
      */
-    BiometricSignature signature;
+    BiometricSignature signature = new BiometricSignature();
 
     /**
      * The sampling rate in microseconds to collect acceleration records at (this is 20Hz)
@@ -170,6 +170,9 @@ public class DataManagementService extends WearableListenerService implements Se
             } else if (path.matches("/gyro-data")) {
                 DataMap map = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
                 signature.pushWatchGyro(map.getByteArray("/gyro"));
+                if (map.getString("/done").matches(DATA_COLLECTION_DONE)) {
+                    finalizeDataCollection();
+                }
             } else {
                 Log.e(TAG, "Received unexpected data with path " + path);
             }
