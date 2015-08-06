@@ -13,10 +13,9 @@ import java.lang.reflect.Type;
  */
 public class AccelerationRecordSerializer implements JsonSerializer<AccelerationRecord> {
 
-    private JsonArray array = new JsonArray();
-
     @Override
     public JsonElement serialize(AccelerationRecord src, Type typeOfSrc, JsonSerializationContext context) {
+        JsonArray array = new JsonArray();
         array.add(new JsonPrimitive(src.getTimestamp()));
         array.add(new JsonPrimitive(src.getX()));
         array.add(new JsonPrimitive(src.getY()));
