@@ -62,6 +62,11 @@ public class MainActivity extends Activity {
      */
     private char sex;
 
+    /**
+     * The user's age
+     */
+    private int age;
+
 
     /**
      * Flag for determining if data collection is occuring
@@ -97,6 +102,7 @@ public class MainActivity extends Activity {
             name  = intent.getStringExtra("NAME");
             email = intent.getStringExtra("EMAIL");
             sex = intent.getCharExtra("SEX", 'M');
+            age = intent.getIntExtra("AGE", 18);
         } else {
             Toast.makeText(this, "Started without name, email, or sex", Toast.LENGTH_LONG).show();
         }
@@ -174,6 +180,7 @@ public class MainActivity extends Activity {
             service.putExtra("NAME", name);
             service.putExtra("EMAIL", email);
             service.putExtra("SEX", sex);
+            service.putExtra("AGE", age);
             startService(service);
             new Thread(new Worker()).start();
             try {

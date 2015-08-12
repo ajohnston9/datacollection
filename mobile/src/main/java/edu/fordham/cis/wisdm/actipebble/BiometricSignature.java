@@ -24,6 +24,10 @@ public class BiometricSignature {
      */
     private char sex;
 
+    public void setAge(int age) {
+        this.age = age;
+    }
+
     /**
      * The age of the user
      */

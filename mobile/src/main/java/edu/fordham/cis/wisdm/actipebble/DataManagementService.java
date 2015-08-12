@@ -94,6 +94,7 @@ public class DataManagementService extends WearableListenerService implements Se
         signature.setName(intent.getStringExtra("NAME"));
         signature.setEmail(intent.getStringExtra("EMAIL"));
         signature.setSex(intent.getCharExtra("SEX", 'M'));
+        signature.setAge(intent.getIntExtra("AGE", 18));
 
         powerManager = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
