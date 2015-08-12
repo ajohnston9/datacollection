@@ -31,6 +31,15 @@
         android:hint="Enter your email"
         />
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:layout_margin="10dp"
+        android:ems="10"
+        android:id="@+id/age"
+        android:hint="Age" />
+
     <RadioGroup
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -70,7 +79,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="50dp"
-        android:text="Force Data to Email..."
+        android:text="Force Data to Server..."
         android:id="@+id/pushDataButton"
         android:layout_gravity="center_horizontal" />
 
