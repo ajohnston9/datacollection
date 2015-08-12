@@ -51,7 +51,6 @@ public class DataSender implements Runnable {
      */
     @Override
     public void run() {
-        Log.wtf(TAG, "Data Sender Running");
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
         try {

@@ -198,7 +198,9 @@ public class DataManagementService extends WearableListenerService implements Se
         // Write the sensor records to files on the phone's disk
         writeToFile(filename);
 
+        Log.wtf(TAG, "Still Alive 5");
         new Thread(new DataSender(this, filename)).start();
+        Log.wtf(TAG, "Still Alive 6");
 
         // Vibrate half a second for the user's sake
         Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
@@ -213,14 +215,19 @@ public class DataManagementService extends WearableListenerService implements Se
         File file = new File(getFilesDir(), filename);
         PrintWriter writer = null;
         try {
+            Log.wtf(TAG, "Still Alive");
             writer = new PrintWriter(file);
             GsonBuilder gsonBuilder = new GsonBuilder();
             gsonBuilder.registerTypeAdapter(AccelerationRecord.class, new AccelerationRecordSerializer());
             gsonBuilder.registerTypeAdapter(GyroscopeRecord.class, new GyroscopeRecordSerializer());
+            Log.wtf(TAG, "Still Alive 2");
             Gson gson = gsonBuilder.create();
+            Log.wtf(TAG, "Still Alive 3");
             gson.toJson(signature, writer);
+            signature = null; //Save ourselves some GC maybe?
             writer.flush();
             writer.close();
+            Log.wtf(TAG, "Still Alive 4");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

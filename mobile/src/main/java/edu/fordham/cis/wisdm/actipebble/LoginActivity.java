@@ -47,6 +47,12 @@ public class LoginActivity extends Activity {
      */
     private EditText mEmail;
 
+    /**
+     * The EditText for entering the users age
+     * @param savedInstanceState
+     */
+    private EditText mAge;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,6 +60,7 @@ public class LoginActivity extends Activity {
 
         mName = (EditText)findViewById(R.id.name);
         mEmail = (EditText) findViewById(R.id.email);
+        mAge = (EditText) findViewById(R.id.age);
         mSexRadioGroup = (RadioGroup) findViewById(R.id.radioGrpSex);
 
 
@@ -95,8 +102,10 @@ public class LoginActivity extends Activity {
             public void onClick(View view) {
                 String name = mName.getText().toString().toLowerCase().trim().replace(" ", "_");
                 char sex = (mSexRadioGroup.getCheckedRadioButtonId() == R.id.isFemale)? 'F' : 'M';
+                int age = Integer.parseInt(mAge.getText().toString());
                 Intent i = new Intent(getApplicationContext(), MainActivity.class);
                 i.putExtra("SEX", sex);
+                i.putExtra("AGE", age);
                 i.putExtra("EMAIL", mEmail.getText().toString().trim());
                 i.putExtra("NAME", name);
                 startActivity(i);
