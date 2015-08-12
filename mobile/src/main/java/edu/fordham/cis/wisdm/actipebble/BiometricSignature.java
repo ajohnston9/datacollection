@@ -23,6 +23,11 @@ public class BiometricSignature {
      * The sex (not gender) of the person
      */
     private char sex;
+
+    /**
+     * The age of the user
+     */
+    private int age;
     /**
      * A list of phone accel records. Filled by Gson automatically, no setters/constructors
      */
@@ -64,6 +69,10 @@ public class BiometricSignature {
 
     public char getSex() {
         return sex;
+    }
+
+    public int getAge() {
+        return age;
     }
 
     public void setSex(char sex) {
