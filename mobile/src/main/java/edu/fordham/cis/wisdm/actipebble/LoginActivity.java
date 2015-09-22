@@ -49,9 +49,13 @@ public class LoginActivity extends Activity {
 
     /**
      * The EditText for entering the users age
-     * @param savedInstanceState
      */
     private EditText mAge;
+
+    /**
+     * Clears the form of user data
+     */
+    private Button mClearForm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +66,15 @@ public class LoginActivity extends Activity {
         mEmail = (EditText) findViewById(R.id.email);
         mAge = (EditText) findViewById(R.id.age);
         mSexRadioGroup = (RadioGroup) findViewById(R.id.radioGrpSex);
-
+        mClearForm     = (Button) findViewById(R.id.clear);
+        mClearForm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mName.setText("");
+                mEmail.setText("");
+                mAge.setText("");
+            }
+        });
 
         mForceDataSend = (Button) findViewById(R.id.pushDataButton);
         mForceDataSend.setOnClickListener(new View.OnClickListener() {

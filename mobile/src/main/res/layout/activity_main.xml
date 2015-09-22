@@ -17,11 +17,11 @@
         android:padding="5dp"
         android:textSize="20sp"/>
     <TextView
-        android:text="If the activity above is not correct, please hit the cancel button below"
+        android:text="If the name above, please hit the cancel button below. When training is complete, press Stop/Cancel."
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:padding="5dp" />
+        android:padding="10dp" />
 
     <LinearLayout
         android:id="@+id/button_bar"

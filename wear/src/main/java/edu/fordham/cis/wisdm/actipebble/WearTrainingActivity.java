@@ -69,7 +69,7 @@ public class WearTrainingActivity extends Activity implements SensorEventListene
     /**
      * Change the second (i.e. 2nd) multiplicand to change the number of seconds of data collected
      */
-    private int delay  = MILLIS_IN_A_SECOND * 120;
+    private int delay  = MILLIS_IN_A_SECOND * 300;
     /**
      * Expressed in a formula so that value makes more sense
      */

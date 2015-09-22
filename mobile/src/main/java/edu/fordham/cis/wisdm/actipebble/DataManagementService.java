@@ -120,7 +120,7 @@ public class DataManagementService extends WearableListenerService implements Se
      */
     @Override
     public void onDestroy() {
-        if(wakeLock.isHeld()) {
+        if(wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
         }
         mSensorManager.unregisterListener(this);

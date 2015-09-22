@@ -5,6 +5,6 @@
     <string name="action_settings">Settings</string>
     <string name="title_activity_login">LoginActivity</string>
     <string name="hello_world">Hello world!</string>
-    <string name="prompt">Please fill in your name and select the desired activity. No action is required on the watch.</string>
+    <string name="prompt">Please fill in the fields above and press submit. No action is required on the watch.</string>
     <string name="copyright">© 2015 Fordham University WISDM Lab.</string>
 </resources>
