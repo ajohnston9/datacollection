@@ -109,7 +109,7 @@ public class LoginActivity extends Activity {
         mStartTraining.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String name = mName.getText().toString().toLowerCase().trim().replace(" ", "_");
+                String name = mName.getText().toString();
                 char sex = (mSexRadioGroup.getCheckedRadioButtonId() == R.id.isFemale)? 'F' : 'M';
                 int age = Integer.parseInt(mAge.getText().toString());
                 Intent i = new Intent(getApplicationContext(), MainActivity.class);

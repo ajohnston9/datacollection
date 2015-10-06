@@ -123,7 +123,9 @@ public class DataManagementService extends WearableListenerService implements Se
         if(wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
         }
-        mSensorManager.unregisterListener(this);
+        if (mSensorManager != null) {
+            mSensorManager.unregisterListener(this);
+        }
         Log.i(TAG, "Un-registering phone sensor listeners.");
         super.onDestroy();
     }
